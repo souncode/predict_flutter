@@ -13,11 +13,10 @@ class _DrawerMenuState extends State<DrawerMenu> {
 
   @override
   Widget build(BuildContext context) {
-    return Drawer(
-      elevation: 0,
-      child: Container(
-        height: double.infinity,
-        width: double.infinity,
+    return Column(
+      
+      children: [Container(
+  height: MediaQuery.of(context).size.height,
         color: MyColor.secondaryBgColor,
         child:  SingleChildScrollView(
           child: Column(
@@ -27,34 +26,124 @@ class _DrawerMenuState extends State<DrawerMenu> {
                 height: 100,
                 alignment: Alignment.center,
                 width: double.infinity,
-                padding: EdgeInsets.only(top:20),
+                padding: EdgeInsets.only(top:0),
                 child: SizedBox(height: 40,width: 25,child: Icon(Icons.heart_broken),),
               ),
-              SizedBox(height: 200,),
+              SizedBox(height: 50,),
               GestureDetector(
-                onTap: (){},
+                onTap: (){
+                  setState(() {
+                    selectedIndex=1;
+                  });
+
+                },
                 child: Container(  
                   width: double.infinity,
                   color: Colors.transparent,
                   child: Row(
                     children: [
-                      Padding(padding: EdgeInsets.symmetric(vertical: 20),
+                      Padding(padding: EdgeInsetsGeometry.only(left: 20),
                       child: Icon(
                         Icons.home,
                         color:selectedIndex==1?Colors.black:MyColor.iconGrayColor),
                       ),
+                      SizedBox(width: 20,),
                       Container(height: 40,width: 3,decoration: BoxDecoration(
                         color: selectedIndex==1?Colors.black:Colors.transparent,
                         borderRadius: BorderRadius.circular(5)
-                      ),)
+                      ),
+                      ),
                     ],
                   ),
                 ),
-              )
+              ),SizedBox(height: 10),
+              GestureDetector(
+                onTap: (){
+                  setState(() {
+                    selectedIndex=2;
+                  });
+
+                },
+                child: Container(  
+                  width: double.infinity,
+                  color: Colors.transparent,
+                  child: Row(
+                    children: [
+                      Padding(padding: EdgeInsetsGeometry.only(left: 20),
+                      child: Icon(
+                        Icons.settings,
+                        color:selectedIndex==2?Colors.black:MyColor.iconGrayColor),
+                      ),
+                      SizedBox(width: 20,),
+                      Container(height: 40,width: 3,decoration: BoxDecoration(
+                        color: selectedIndex==2?Colors.black:Colors.transparent,
+                        borderRadius: BorderRadius.circular(5)
+                      ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),SizedBox(height: 10),
+              GestureDetector(
+                onTap: (){
+                  setState(() {
+                    selectedIndex=3;
+                  });
+
+                },
+                child: Container(  
+                  width: double.infinity,
+                  color: Colors.transparent,
+                  child: Row(
+                    children: [
+                      Padding(padding: EdgeInsetsGeometry.only(left: 20),
+                      child: Icon(
+                        Icons.connecting_airports_rounded,
+                        color:selectedIndex==3?Colors.black:MyColor.iconGrayColor),
+                      ),
+                      SizedBox(width: 20,),
+                      Container(height: 40,width: 3,decoration: BoxDecoration(
+                        color: selectedIndex==3?Colors.black:Colors.transparent,
+                        borderRadius: BorderRadius.circular(5)
+                      ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),SizedBox(height: 10),
+              GestureDetector(
+                onTap: (){
+                  setState(() {
+                    selectedIndex=4;
+                  });
+
+                },
+                child: Container(  
+                  width: double.infinity,
+                  color: Colors.transparent,
+                  child: Row(
+                    children: [
+                      Padding(padding: EdgeInsetsGeometry.only(left: 20),
+                      child: Icon(
+                        Icons.person,
+                        color:selectedIndex==4?Colors.black:MyColor.iconGrayColor),
+                      ),
+                      SizedBox(width: 20,),
+                      Container(height: 40,width: 3,decoration: BoxDecoration(
+                        color: selectedIndex==4?Colors.black:Colors.transparent,
+                        borderRadius: BorderRadius.circular(5)
+                      ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),SizedBox(height: 10),
+              
             ],
           ), 
         ),
       ),
-    );
+      ]);
   }
+
 }

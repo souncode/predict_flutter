@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:predict_ai/Widget/drawer_menu.dart';
+import 'package:predict_ai/widget/drawer_menu.dart';
 import 'package:predict_ai/constant/constant.dart';
 
 class HomePage extends StatefulWidget {
@@ -14,19 +14,15 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: MyColor.backgroundColor,
-body: SafeArea(child: Row(
-  children: [
-    SizedBox(
-      width: 70,
-      child: Expanded(
-        flex: 1,
-        child: DrawerMenu()),
-    ),
-      Expanded(
-        flex: 0,
-        child: SizedBox())
-  ],
-)),
+      body: SafeArea(
+        child: Row(
+          children: [
+            SizedBox(width: 70, child: DrawerMenu()),
+            Expanded(flex: 0, child: SizedBox()),
+            Expanded(flex: 4, child: SizedBox()),
+          ],
+        ),
+      ),
     );
   }
 }
