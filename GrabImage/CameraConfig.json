@@ -1,0 +1,31 @@
+{
+    "cameras": [
+        {
+            "name": "Cam 1",
+            "serial": "Vir96101320",
+            "ip": "10.64.99.200",
+            "model_index": 0,
+            "trigger_mode": "Off",
+            "exposure_time": 5000,
+            "gain": 10.0
+        },
+        {
+            "name": "Cam 2",
+            "serial": "Vir97359832",
+            "ip": "10.64.151.216",
+            "model_index": 1,
+            "trigger_mode": "Off",
+            "exposure_time": 5000,
+            "gain": 10.0
+        },
+        {
+            "name": "Cam 3",
+            "serial": "Vir97361110",
+            "ip": "10.64.156.214",
+            "model_index": 2,
+            "trigger_mode": "Off",
+            "exposure_time": 5000,
+            "gain": 10.0
+        }
+    ]
+}
