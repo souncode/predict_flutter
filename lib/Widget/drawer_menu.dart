@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:predict_ai/constant/constant.dart';
 
 class DrawerMenu extends StatefulWidget {
-  const DrawerMenu({super.key});
+  final Function(int) onItemSelected;
+  const DrawerMenu({super.key, required this.onItemSelected});
 
   @override
   State<DrawerMenu> createState() => _DrawerMenuState();
@@ -39,6 +40,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                     setState(() {
                       selectedIndex = 1;
                     });
+                    widget.onItemSelected(1);
                   },
                   child: Container(
                     width: double.infinity,
@@ -77,6 +79,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                     setState(() {
                       selectedIndex = 2;
                     });
+                    widget.onItemSelected(2);
                   },
                   child: Container(
                     width: double.infinity,
@@ -115,6 +118,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                     setState(() {
                       selectedIndex = 3;
                     });
+                    widget.onItemSelected(3);
                   },
                   child: Container(
                     width: double.infinity,
@@ -153,6 +157,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                     setState(() {
                       selectedIndex = 4;
                     });
+                    widget.onItemSelected(4);
                   },
                   child: Container(
                     width: double.infinity,

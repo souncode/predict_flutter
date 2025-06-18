@@ -26,6 +26,15 @@
             "trigger_mode": "Off",
             "exposure_time": 5000,
             "gain": 10.0
+        },
+        {
+            "name": "Cam 4",
+            "serial": "Vir23775451",
+            "ip": "10.64.156.214",
+            "model_index": 2,
+            "trigger_mode": "Off",
+            "exposure_time": 5000,
+            "gain": 10.0
         }
     ]
 }

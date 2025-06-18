@@ -14,32 +14,47 @@ class PredictView extends StatefulWidget {
 
 class _PredictViewState extends State<PredictView> {
   late WebSocketChannel _channel;
+
   Map<String, String> cameraImages = {}; // camera name -> base64 image
 
   @override
   void initState() {
     super.initState();
+    _connectWebSocket();
+  }
+
+  void _connectWebSocket() {
+    print("🔄 Connect to WebSocket...");
+
     _channel = WebSocketChannel.connect(
       Uri.parse('ws://172.20.10.3:8000/ws/image'),
     );
 
     _channel.stream.listen(
       (data) {
-        print("Receive");
         final decoded = jsonDecode(data);
         final String cameraName = decoded['camera'];
         final String image = decoded['image'];
+
         setState(() {
           cameraImages[cameraName] = image;
         });
       },
       onError: (error) {
-        print("❌ [Flutter] Lỗi WebSocket: $error");
+        print("⚠️ WebSocket Error: $error");
+        _reconnectWebSocket();
       },
       onDone: () {
-        print("❌ [Flutter] WebSocket đã đóng");
+        print("❌ WebSocket closed.");
+        _reconnectWebSocket();
       },
+      cancelOnError: true,
     );
+  }
+
+  void _reconnectWebSocket() async {
+    await Future.delayed(const Duration(seconds: 2));
+    _connectWebSocket();
   }
 
   @override
@@ -74,6 +89,13 @@ class _PredictViewState extends State<PredictView> {
               ),
             ),
             const Expanded(flex: 1, child: SizedBox()),
+            ElevatedButton(
+              onPressed: () {
+                _channel.sink.add("capture");
+                print("📤 Sent command capture");
+              },
+              child: const Text("Shot"),
+            ),
           ],
         ),
       ),

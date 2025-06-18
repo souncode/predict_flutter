@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
+import 'constant/constant.dart';
 
 void main() {
   runApp(const MyApp());
@@ -32,7 +33,7 @@ class _WebSocketPageState extends State<WebSocketPage> {
 
     try {
       channel = WebSocketChannel.connect(
-        Uri.parse('ws://172.20.10.3:8000'), // Đổi IP đúng
+        Uri.parse(ConnectionCfg.socketServer), 
       );
 
       connectionStatus = "✅ Connected to server";

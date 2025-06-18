@@ -10,3 +10,6 @@ class MyColor{
   static const secondaryBgColor=Color(0xffececf6);
   static const barBgColor = Color(0xffe3e3ee);
 }
+class ConnectionCfg{
+static const String socketServer ='ws://172.20.10.3:8000';
+}

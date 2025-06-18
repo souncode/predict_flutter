@@ -21,6 +21,7 @@ models = [YOLO(p) for p in model_paths]
 cams = []
 cams_lock = Lock()
 clients = set()
+print(f"🔌 Số lượng client WebSocket đang kết nối: {len(clients)}")
 camera_configs = []
 
 def load_camera_config():
@@ -110,32 +111,28 @@ async def websocket_image(websocket: WebSocket):
 
     try:
         while True:
-            await asyncio.sleep(1)
+            message = await websocket.receive_text()
+            print(f"📨 Received from client: {message}")
+
+            if message == "capture":
+                await handle_capture_and_send(websocket)
     except Exception as e:
         print(f"🔴 WebSocket client disconnected: {client_info} ({e})")
     finally:
         clients.discard(websocket)
         print(f"🟡 Client removed: {client_info} (Remaining: {len(clients)})")
-
-
-@app.get("/capture")
-async def capture_all():
+async def handle_capture_and_send(websocket: WebSocket):
     with cams_lock:
-        if not cams:
-            return JSONResponse(status_code=500, content={"error": "Không có camera nào đang hoạt động"})
-
-        results = []
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        for idx, cam_info in enumerate(cams):
+        for cam_info in cams:
             cam = cam_info["cam"]
-            model_index = cam_info["model_index"]
             cam_name = cam_info["name"]
 
             stOutFrame = MV_FRAME_OUT()
             memset(byref(stOutFrame), 0, sizeof(stOutFrame))
 
-            ret = cam.MV_CC_GetImageBuffer(stOutFrame, 500)
+            ret = cam.MV_CC_GetImageBuffer(stOutFrame, 1000)
             if ret == 0 and stOutFrame.pBufAddr:
                 try:
                     width = stOutFrame.stFrameInfo.nWidth
@@ -146,7 +143,52 @@ async def capture_all():
                     buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
                     np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
 
-                    # Encode ảnh sang base64
+                    _, buffer = cv2.imencode('.jpg', np_img)
+                    base64_img = base64.b64encode(buffer).decode()
+
+                    await websocket.send_json({
+                        "camera": cam_name,
+                        "image": base64_img
+                    })
+
+                    print(f"✅ Sent image from {cam_name} to {websocket.client.host}:{websocket.client.port}")
+
+                finally:
+                    cam.MV_CC_FreeImageBuffer(stOutFrame)
+
+@app.get("/capture")
+async def capture_all():
+    try:
+        with cams_lock:
+            if not cams:
+                return JSONResponse(status_code=500, content={"error": "Không có camera nào đang hoạt động"})
+
+            results = []
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+            for idx, cam_info in enumerate(cams):
+                cam = cam_info["cam"]
+                model_index = cam_info["model_index"]
+                cam_name = cam_info["name"]
+
+                stOutFrame = MV_FRAME_OUT()
+                memset(byref(stOutFrame), 0, sizeof(stOutFrame))
+
+                ret = cam.MV_CC_GetImageBuffer(stOutFrame, 500)
+                if ret != 0 or not stOutFrame.pBufAddr:
+                    print(f"❌ Không lấy được ảnh từ {cam_name}")
+                    results.append(None)
+                    continue
+
+                try:
+                    width = stOutFrame.stFrameInfo.nWidth
+                    height = stOutFrame.stFrameInfo.nHeight
+                    buf_len = stOutFrame.stFrameInfo.nFrameLen
+
+                    buf_type = (c_ubyte * buf_len)
+                    buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
+                    np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
+
                     _, buffer = cv2.imencode('.jpg', np_img)
                     base64_img = base64.b64encode(buffer).decode()
 
@@ -158,11 +200,11 @@ async def capture_all():
                     # Gửi ảnh qua WebSocket
                     for ws in list(clients):
                         try:
-                            await ws.send_json(data)
-                            print(f"📤 Gửi ảnh từ {cam_name} đến {ws.client.host}:{ws.client.port}")
+                            await asyncio.wait_for(ws.send_json(data), timeout=1.0)
+                            print(f"📤 Gửi ảnh từ {cam_name} đến {getattr(ws.client, 'host', 'unknown')}:{getattr(ws.client, 'port', 'unknown')}")
                         except Exception as e:
-                            print(f"⚠️ Lỗi gửi ảnh đến {ws.client.host}:{ws.client.port} — {e}")
-                            clients.remove(ws)
+                            print(f"⚠️ Lỗi gửi ảnh đến WebSocket client: {e}")
+                            clients.discard(ws)
 
                     # Lưu ảnh
                     filename = f"{cam_name}_{timestamp}.jpg"
@@ -174,18 +216,12 @@ async def capture_all():
                 except Exception as e:
                     print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
                     results.append(None)
+
                 finally:
                     cam.MV_CC_FreeImageBuffer(stOutFrame)
-            else:
-                print(f"❌ Lỗi lấy buffer {cam_name}: mã lỗi {hex(ret)}")
-                results.append(None)
 
-        return JSONResponse(content={"images": results})
-if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(
-        "websocketmyapp:app",
-        host="0.0.0.0",
-        port=8000,
-        reload=True  
-    )
+            return JSONResponse(content={"images": results})
+
+    except Exception as e:
+        print(f"🔥 Lỗi trong /capture: {e}")
+        return JSONResponse(status_code=500, content={"error": str(e)})
