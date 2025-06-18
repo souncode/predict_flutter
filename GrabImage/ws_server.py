@@ -31,7 +31,7 @@ def load_camera_config():
     with open("CameraConfig.json", "r") as f:
         data = json.load(f)
         camera_configs = data["cameras"]
-        issaveimage = data.get("issaveimage", False)
+        issaveimage = data.get("issave", False)
         save_path = data.get("save_path", "images")
         
 
@@ -235,3 +235,11 @@ async def capture_all():
     except Exception as e:
         print(f"🔥 Lỗi trong /capture: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(
+        "websocketmyapp:app",
+        host="0.0.0.0",
+        port=8000,
+        reload=True  # hoặc bỏ nếu không muốn auto reload
+    )

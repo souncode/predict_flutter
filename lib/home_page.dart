@@ -19,46 +19,25 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late WebSocketChannel _channel;
+
   int _currentPage = 1;
-  int _wsStatus =0;
   Map<String, String> cameraImages = {}; // camera name -> base64 image
 
   @override
   void initState() {
     super.initState();
-    _channel = WebSocketChannel.connect(
-      Uri.parse('ws://172.20.10.3:8000/ws/image'),
-    );
-
-    _channel.stream.listen(
-      (data) {
-        print("Receive");
-        final decoded = jsonDecode(data);
-        final String cameraName = decoded['camera'];
-        final String image = decoded['image'];
-        setState(() {
-          cameraImages[cameraName] = image;
-        });
-      },
-      onError: (error) {
-        print("❌ [Flutter] Lỗi WebSocket: $error");
-      },
-      onDone: () {
-        print("❌ [Flutter] WebSocket đã đóng");
-      },
-    );
+   
   }
 
   @override
   void dispose() {
-    _channel.sink.close();
+
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    final cameraNames = cameraImages.keys.toList();
+
 
     return Scaffold(
       backgroundColor: MyColor.backgroundColor,

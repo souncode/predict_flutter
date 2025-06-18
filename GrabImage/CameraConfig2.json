@@ -3,9 +3,9 @@
     "save_path": "F:/predict_flutter/GrabImage",
     "cameras": [
         {
-            "name": "Cam 1S",
+            "name": "Cam 1",
             "serial": "Vir25184227",
-            "ip": "10.64.99.200",
+            "ip": "10.64.71.230",
             "model_index": 0,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -14,7 +14,7 @@
         {
             "name": "Cam 2",
             "serial": "Vir25258247",
-            "ip": "10.64.151.216",
+            "ip": "10.64.105.7",
             "model_index": 1,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -23,7 +23,7 @@
         {
             "name": "Cam 3",
             "serial": "Vir25258317",
-            "ip": "10.64.156.214",
+            "ip": "10.64.105.77",
             "model_index": 2,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -32,8 +32,8 @@
         {
             "name": "Cam 4",
             "serial": "Vir25258373",
-            "ip": "10.64.156.214",
-            "model_index": 2,
+            "ip": "10.64.105.133",
+            "model_index": 3,
             "trigger_mode": "Off",
             "exposure_time": 5000,
             "gain": 10.0
