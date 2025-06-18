@@ -1,4 +1,6 @@
 {
+    "issave": false,
+    "save_path": "D:/SoWn/predict_flutter/GrabImage/images",
     "cameras": [
         {
             "name": "Cam 1S",

@@ -23,12 +23,17 @@ cams_lock = Lock()
 clients = set()
 print(f"🔌 Số lượng client WebSocket đang kết nối: {len(clients)}")
 camera_configs = []
-
+issaveimage = False
+save_path = "images"
 def load_camera_config():
-    global camera_configs
+  
+    global camera_configs,issaveimage, save_path
     with open("CameraConfig.json", "r") as f:
         data = json.load(f)
         camera_configs = data["cameras"]
+        issaveimage = data.get("issaveimage", False)
+        save_path = data.get("save_path", "images")
+        
 
 def decode_model_name(model_bytes):
     return bytes(model_bytes).split(b'\x00')[0].decode(errors='ignore').strip()
@@ -204,11 +209,16 @@ async def capture_all():
                             print(f"📤 Gửi ảnh từ {cam_name} đến {getattr(ws.client, 'host', 'unknown')}:{getattr(ws.client, 'port', 'unknown')}")
                         except Exception as e:
                             print(f"⚠️ Lỗi gửi ảnh đến WebSocket client: {e}")
-                            clients.discard(ws)
+                            clients.Wdiscard(ws)
 
                     # Lưu ảnh
-                    filename = f"{cam_name}_{timestamp}.jpg"
-                    cv2.imwrite(filename, np_img)
+                    if issaveimage:
+                        os.makedirs(save_path, exist_ok=True)
+                        filename = os.path.join(save_path, f"{cam_name}_{timestamp}.jpg")
+                        cv2.imwrite(filename, np_img)
+                        print(f"✅ Ảnh từ {cam_name} đã lưu tại {filename}")
+                    else:
+                        filename = None
                     print(f"✅ Ảnh từ {cam_name} đã lưu và gửi WebSocket")
 
                     results.append(filename)
