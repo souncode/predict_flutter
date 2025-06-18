@@ -1,13 +1,13 @@
 import 'package:flutter/material.dart';
 
-class AboutPage extends StatefulWidget {
-  const AboutPage({super.key});
+class LogPage extends StatefulWidget {
+  const LogPage({super.key});
 
   @override
-  State<AboutPage> createState() => _AboutPageState();
+  State<LogPage> createState() => _LogPageState();
 }
 
-class _AboutPageState extends State<AboutPage> {
+class _LogPageState extends State<LogPage> {
   @override
   Widget build(BuildContext context) {
     return Text("About");

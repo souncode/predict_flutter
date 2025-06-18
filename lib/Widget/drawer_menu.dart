@@ -167,7 +167,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                         Padding(
                           padding: EdgeInsetsGeometry.only(left: 20),
                           child: Icon(
-                            Icons.person,
+                            Icons.terminal,
                             color:
                                 selectedIndex == 4
                                     ? Colors.black
@@ -190,7 +190,13 @@ class _DrawerMenuState extends State<DrawerMenu> {
                     ),
                   ),
                 ),
-                SizedBox(height: 10),
+
+                SizedBox(height: 400),
+                Icon(Icons.lan_rounded),
+                SizedBox(height: 20),
+                Icon(Icons.camera_enhance),
+                SizedBox(height: 20),
+                Icon(Icons.device_hub),
               ],
             ),
           ),

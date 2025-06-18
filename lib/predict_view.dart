@@ -1,12 +1,12 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:predict_ai/widget/camera_image.dart';
-import 'package:predict_ai/widget/drawer_menu.dart';
 import 'package:predict_ai/constant/constant.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class PredictView extends StatefulWidget {
-  const PredictView({super.key});
+  final Function(int) onConnectStatus;
+  const PredictView({super.key, required this.onConnectStatus});
 
   @override
   State<PredictView> createState() => _PredictViewState();

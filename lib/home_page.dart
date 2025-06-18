@@ -21,6 +21,7 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late WebSocketChannel _channel;
   int _currentPage = 1;
+  int _wsStatus =0;
   Map<String, String> cameraImages = {}; // camera name -> base64 image
 
   @override
@@ -90,7 +91,7 @@ class _HomePageState extends State<HomePage> {
                           ? "Setting"
                           : _currentPage == 3
                           ? "Connection"
-                          : "About",
+                          : "Log",
                       style: GoogleFonts.alfaSlabOne(
                         color: Colors.white,
                         fontSize: 20,
@@ -105,12 +106,18 @@ class _HomePageState extends State<HomePage> {
               flex: 8,
               child:
                   _currentPage == 1
-                      ? PredictView()
+                      ? PredictView(
+                        onConnectStatus: (int index) {
+                          setState(() {
+                            _currentPage = index;
+                          });
+                        },
+                      )
                       : _currentPage == 2
                       ? ConfigPage()
                       : _currentPage == 3
                       ? ConnectionPage()
-                      : AboutPage(),
+                      : LogPage(),
             ),
             const Expanded(flex: 1, child: SizedBox()),
           ],
