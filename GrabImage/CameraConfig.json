@@ -1,7 +1,7 @@
 {
     "cameras": [
         {
-            "name": "Cam 1",
+            "name": "Cam 1S",
             "serial": "Vir96101320",
             "ip": "10.64.99.200",
             "model_index": 0,

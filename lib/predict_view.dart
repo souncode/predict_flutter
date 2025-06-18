@@ -1,19 +1,18 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:predict_ai/predict_view.dart';
 import 'package:predict_ai/widget/camera_image.dart';
 import 'package:predict_ai/widget/drawer_menu.dart';
 import 'package:predict_ai/constant/constant.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
-class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+class PredictView extends StatefulWidget {
+  const PredictView({super.key});
 
   @override
-  State<HomePage> createState() => _HomePageState();
+  State<PredictView> createState() => _PredictViewState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _PredictViewState extends State<PredictView> {
   late WebSocketChannel _channel;
   Map<String, String> cameraImages = {}; // camera name -> base64 image
 
@@ -58,8 +57,22 @@ class _HomePageState extends State<HomePage> {
       body: SafeArea(
         child: Row(
           children: [
-            const SizedBox(width: 70, child: DrawerMenu()),
-            Expanded(flex: 8, child: PredictView()),
+            Expanded(
+              flex: 8,
+              child: GridView.count(
+                crossAxisCount: 3,
+                crossAxisSpacing: 8,
+                mainAxisSpacing: 8,
+                padding: const EdgeInsets.all(12),
+                children:
+                    cameraNames.map((cameraName) {
+                      return CameraImageWidget(
+                        cameraId: cameraName,
+                        base64Image: cameraImages[cameraName],
+                      );
+                    }).toList(),
+              ),
+            ),
             const Expanded(flex: 1, child: SizedBox()),
           ],
         ),
