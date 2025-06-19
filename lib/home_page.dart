@@ -20,7 +20,7 @@ class HomePage extends StatefulWidget {
 
 class _HomePageState extends State<HomePage> {
 
-  int _currentPage = 1;
+  int _currentPage = 2;
   Map<String, String> cameraImages = {}; // camera name -> base64 image
 
   @override

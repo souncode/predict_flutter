@@ -238,8 +238,8 @@ async def capture_all():
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
-        "websocketmyapp:app",
+        "ws_server:app",
         host="0.0.0.0",
         port=8000,
-        reload=True  # hoặc bỏ nếu không muốn auto reload
+        reload=True  
     )
