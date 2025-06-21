@@ -3,8 +3,8 @@
     "save_path": "F:/predict_flutter/GrabImage",
     "cameras": [
         {
-            "name": "Cam 1S",
-            "serial": "Vir25184227",
+            "name": "Cam 1",
+            "serial": "Vir96101320",
             "ip": "10.64.99.200",
             "model_index": 0,
             "trigger_mode": "Off",
@@ -13,7 +13,7 @@
         },
         {
             "name": "Cam 2",
-            "serial": "Vir25258247",
+            "serial": "Vir97359832",
             "ip": "10.64.151.216",
             "model_index": 1,
             "trigger_mode": "Off",
@@ -22,7 +22,7 @@
         },
         {
             "name": "Cam 3",
-            "serial": "Vir25258317",
+            "serial": "Vir97361110",
             "ip": "10.64.156.214",
             "model_index": 2,
             "trigger_mode": "Off",
@@ -31,9 +31,27 @@
         },
         {
             "name": "Cam 4",
-            "serial": "Vir25258373",
-            "ip": "10.64.156.214",
-            "model_index": 2,
+            "serial": "Vir23775451",
+            "ip": "10.64.200.219",
+            "model_index": 3,
+            "trigger_mode": "Off",
+            "exposure_time": 5000,
+            "gain": 10.0
+        },
+        {
+            "name": "Cam 5",
+            "serial": "Vir30177323",
+            "ip": "10.64.120.43",
+            "model_index": 4,
+            "trigger_mode": "Off",
+            "exposure_time": 5000,
+            "gain": 10.0
+        },
+        {
+            "name": "Cam 6",
+            "serial": "Vir30177533",
+            "ip": "10.64.120.253",
+            "model_index": 5,
             "trigger_mode": "Off",
             "exposure_time": 5000,
             "gain": 10.0

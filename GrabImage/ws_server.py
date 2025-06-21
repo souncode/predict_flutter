@@ -106,10 +106,17 @@ def startup_event():
     load_camera_config()
     with cams_lock:
         init_all_cameras_from_config()
+    asyncio.create_task(ping_clients_loop())
+       
 
 @app.websocket("/ws/image")
 async def websocket_image(websocket: WebSocket):
     await websocket.accept()
+    for ws in list(clients):
+        if ws.client.host == websocket.client.host and ws.client.port == websocket.client.port:
+            clients.discard(ws)
+
+    clients.add(websocket)
     client_info = f"{websocket.client.host}:{websocket.client.port}"
     clients.add(websocket)
     print(f"🟢 WebSocket client connected: {client_info} (Total: {len(clients)})")
@@ -160,6 +167,15 @@ async def handle_capture_and_send(websocket: WebSocket):
 
                 finally:
                     cam.MV_CC_FreeImageBuffer(stOutFrame)
+async def ping_clients_loop():
+    while True:
+        await asyncio.sleep(10)
+        for ws in list(clients):
+            try:
+                await ws.send_json({"ping": "ping"})
+            except Exception as e:
+                print(f"⚠️ Client không phản hồi ping → xóa: {e}")
+                clients.discard(ws)
 
 @app.get("/capture")
 async def capture_all():
@@ -209,7 +225,7 @@ async def capture_all():
                             print(f"📤 Gửi ảnh từ {cam_name} đến {getattr(ws.client, 'host', 'unknown')}:{getattr(ws.client, 'port', 'unknown')}")
                         except Exception as e:
                             print(f"⚠️ Lỗi gửi ảnh đến WebSocket client: {e}")
-                            clients.Wdiscard(ws)
+                            clients.discard(ws) 
 
                     # Lưu ảnh
                     if issaveimage:
