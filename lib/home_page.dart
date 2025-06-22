@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:predict_ai/Widget/pie_chart.dart';
 import 'package:predict_ai/about_page.dart';
 import 'package:predict_ai/config_page.dart';
 import 'package:predict_ai/connection_page.dart';
@@ -19,27 +21,41 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-
-  int _currentPage = 2;
+  int _currentPage = 1;
   Map<String, String> cameraImages = {}; // camera name -> base64 image
 
   @override
   void initState() {
     super.initState();
-   
   }
 
   @override
   void dispose() {
-
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-
-
     return Scaffold(
+      appBar: AppBar(
+        title: Column(
+          children: [
+            Text(
+              "Premo Industrial Vision Dashboard",
+              style: GoogleFonts.lilitaOne(color: Color(0xFF60A5FA)),
+            ),
+            Text(
+              "AI-Powered 6-Camera Inspection System",
+              style: TextStyle(
+                fontSize: 10,
+                color: Color.fromARGB(255, 137, 148, 161),
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ],
+        ),
+        backgroundColor: MyColor.appBarColor,
+      ),
       backgroundColor: MyColor.backgroundColor,
       body: SafeArea(
         child: Row(
@@ -58,7 +74,7 @@ class _HomePageState extends State<HomePage> {
               width: 50,
               height: double.infinity,
               child: Container(
-                color: MyColor.iconGrayColor,
+                color: const Color.fromARGB(255, 40, 53, 73),
                 child: Center(
                   // Thêm Center để căn giữa
                   child: RotatedBox(
@@ -98,7 +114,21 @@ class _HomePageState extends State<HomePage> {
                       ? ConnectionPage()
                       : LogPage(),
             ),
-            const Expanded(flex: 1, child: SizedBox()),
+            Expanded(
+              flex: 1,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                children: [
+                  Text("Real-time Analytics"),
+                  SizedBox(
+                    height: 300,
+                    child: PieChartRate(okCount: 23, ngCount: 10),
+                  ),
+                  Card(),
+                ],
+              ),
+            ),
+            SizedBox(width: 100),
           ],
         ),
       ),

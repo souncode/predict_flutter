@@ -18,7 +18,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
       children: [
         Container(
           height: MediaQuery.of(context).size.height,
-          color: MyColor.secondaryBgColor,
+          color: MyColor.appBarColor,
           child: SingleChildScrollView(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.center,
@@ -191,7 +191,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                   ),
                 ),
 
-                SizedBox(height: 400),
+                SizedBox(height: 100),
                 Icon(Icons.lan_rounded),
                 SizedBox(height: 20),
                 Icon(Icons.camera_enhance),

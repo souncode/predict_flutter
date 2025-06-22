@@ -15,7 +15,7 @@ class PredictView extends StatefulWidget {
 class _PredictViewState extends State<PredictView> {
   late WebSocketChannel _channel;
 
-  Map<String, String> cameraImages = {}; 
+  Map<String, String> cameraImages = {};
 
   @override
   void initState() {
@@ -27,7 +27,7 @@ class _PredictViewState extends State<PredictView> {
     print("🔄 Connect to WebSocket...");
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.7:8000/ws/image'),
+      Uri.parse('ws://192.168.1.3:8000/ws/image'),
     );
 
     _channel.stream.listen(
@@ -88,8 +88,8 @@ class _PredictViewState extends State<PredictView> {
                     }).toList(),
               ),
             ),
-            const Expanded(flex: 1, child: SizedBox()),
-            ElevatedButton(
+
+            FloatingActionButton(
               onPressed: () {
                 _channel.sink.add("capture");
                 print("📤 Sent command capture");
