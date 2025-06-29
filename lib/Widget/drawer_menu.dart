@@ -199,11 +199,11 @@ class _DrawerMenuState extends State<DrawerMenu> {
                        _wsManager.send("capture");
                       
                     },
-                    child: Icon(Icons.lan_rounded)),
+                    child: Icon(Icons.lan_rounded,color: const Color.fromARGB(255, 108, 248, 113),)),
                   SizedBox(height: 20),
-                  Icon(Icons.camera_enhance),
+                  Icon(Icons.camera_enhance,color: const Color.fromARGB(255, 108, 248, 113)),
                   SizedBox(height: 20),
-                  Icon(Icons.device_hub),
+                  Icon(Icons.device_hub,color: const Color.fromARGB(255, 108, 248, 113)),
                 ],
               ),
             ),
