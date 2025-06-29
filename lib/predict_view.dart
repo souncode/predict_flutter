@@ -27,7 +27,7 @@ class _PredictViewState extends State<PredictView> {
     print("🔄 Connect to WebSocket...");
 
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.3:8000/ws/image'),
+      Uri.parse('ws://192.168.1.11:8000/ws/image'),
     );
 
     _channel.stream.listen(

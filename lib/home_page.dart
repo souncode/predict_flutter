@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
+import 'package:predict_ai/Widget/dashboardstats.dart';
 import 'package:predict_ai/Widget/pie_chart.dart';
 import 'package:predict_ai/about_page.dart';
 import 'package:predict_ai/config_page.dart';
@@ -115,20 +116,26 @@ class _HomePageState extends State<HomePage> {
                       : LogPage(),
             ),
             Expanded(
-              flex: 1,
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.start,
-                children: [
-                  Text("Real-time Analytics"),
-                  SizedBox(
-                    height: 300,
-                    child: PieChartRate(okCount: 23, ngCount: 10),
+              flex: 2,
+              child: SingleChildScrollView(
+                child: Padding(
+                  padding: const EdgeInsets.all(4.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.start,
+                    children: [
+                      DashboardStats(),
+                      Text("Real-time Analytics"),
+                      SizedBox(
+                        height: 300,
+                        child: PieChartRate(okCount: 23, ngCount: 10),
+                      ),
+                      Card(),
+                    ],
                   ),
-                  Card(),
-                ],
+                ),
               ),
             ),
-            SizedBox(width: 100),
+         
           ],
         ),
       ),

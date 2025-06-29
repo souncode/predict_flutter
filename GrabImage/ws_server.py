@@ -10,10 +10,12 @@ import asyncio
 from threading import Lock
 import base64
 from ultralytics import YOLO
+import subprocess
 
 from MvCameraControl_class import *
 
 app = FastAPI()
+
 
 model_paths = ["models/model1.pt", "models/model2.pt", "models/model3.pt"]
 models = [YOLO(p) for p in model_paths]
@@ -176,6 +178,34 @@ async def ping_clients_loop():
             except Exception as e:
                 print(f"⚠️ Client không phản hồi ping → xóa: {e}")
                 clients.discard(ws)
+
+@app.get("/scancamera")
+def scan_camera():
+    try:
+        # Gọi file Python
+        process = subprocess.run(
+            ["python", "check_and_save_cameras.py"],  # 👈 chỉnh path nếu cần
+            capture_output=True,
+            text=True
+        )
+
+        if process.returncode == 0:
+            return JSONResponse(content={
+                "status": "success",
+                "output": process.stdout.strip()
+            })
+        else:
+            return JSONResponse(status_code=500, content={
+                "status": "error",
+                "output": process.stderr.strip()
+            })
+
+    except Exception as e:
+        return JSONResponse(status_code=500, content={
+            "status": "exception",
+            "output": str(e)
+        })
+
 
 @app.get("/capture")
 async def capture_all():

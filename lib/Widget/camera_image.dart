@@ -25,7 +25,9 @@ class CameraImageWidget extends StatelessWidget {
     return Card(
       color: MyColor.appBarColor,
       elevation: 4,
-      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      shape: RoundedRectangleBorder(
+     side: BorderSide(color: const Color.fromARGB(255, 169, 193, 226), width: 2),
+        borderRadius: BorderRadius.circular(12)),
       child: Column(
         children: [
           Padding(
@@ -51,7 +53,7 @@ class CameraImageWidget extends StatelessWidget {
                     child: Text(" Connected "),
                   ),
                   decoration: BoxDecoration(
-                    color: Colors.greenAccent,
+                    color: Color(0xFF22C55E),
                     borderRadius: BorderRadius.circular(15),
                   ),
                 ),

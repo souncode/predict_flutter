@@ -9,6 +9,7 @@ class MyColor {
   static const primaryBgColor = Color(0xfff5f5fd);
   static const secondaryBgColor = Color(0xffececf6);
   static const barBgColor = Color(0xffe3e3ee);
+  static const drawerButtonColor = Color.fromARGB(255, 126, 158, 226);
 }
 
 class ConnectionCfg {

@@ -12,10 +12,10 @@ def scan_cameras():
     ret = MvCamera.MV_CC_EnumDevices(MV_GIGE_DEVICE, deviceList)
 
     if ret != 0 or deviceList.nDeviceNum == 0:
-        print("❌ Không tìm thấy camera GigE.")
+        print(" Not found camera GigE.")
         return []
 
-    print(f"✅ Tìm thấy {deviceList.nDeviceNum} camera:")
+    print(f"[OK] Found {deviceList.nDeviceNum} camera:")
     camera_info = []
 
     for i in range(deviceList.nDeviceNum):
@@ -29,9 +29,9 @@ def scan_cameras():
             serial = bytes(gige_info.chSerialNumber).decode(errors='ignore').strip('\x00').strip()
 
 
-            cam_name = f"Cam {i + 1}"  # hoặc tạo tên theo model
+            cam_name = f"Cam {i + 1}" 
 
-            print(f"  📷 {cam_name} | IP: {ip_str} | Model: {model} | Serial: {serial}")
+            print(f"   {cam_name} | IP: {ip_str} | Model: {model} | Serial: {serial}")
 
             camera_info.append({
                 "name": cam_name,
@@ -45,7 +45,7 @@ def scan_cameras():
 
     return camera_info
 
-def save_config(cameras, output_path="CameraConfig2.json"):
+def save_config(cameras, output_path="CameraConfig.json"):
     config = {
         "issave": False,
         "save_path": "F:/predict_flutter/GrabImage",
@@ -53,11 +53,11 @@ def save_config(cameras, output_path="CameraConfig2.json"):
     }
     with open(output_path, "w") as f:
         json.dump(config, f, indent=4)
-    print(f"✅ Đã lưu cấu hình vào '{output_path}'")
+    print(f" Save config to '{output_path}'")
 
 if __name__ == "__main__":
     camera_list = scan_cameras()
     if camera_list:
         save_config(camera_list)
     else:
-        print("⚠️ Không có camera nào được lưu.")
+        print(" No camera saved.")
