@@ -196,7 +196,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                   SizedBox(height: 100),
                   GestureDetector(
                     onTap: (){
-                       _wsManager.send("capture");
+                       WebSocketManager().send("capture");
                       
                     },
                     child: Icon(Icons.lan_rounded,color: const Color.fromARGB(255, 108, 248, 113),)),

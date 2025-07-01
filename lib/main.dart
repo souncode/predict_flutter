@@ -1,7 +1,7 @@
 import 'package:flutter/foundation.dart'; // Thêm để dùng kDebugMode
 import 'package:flutter/material.dart';
 import 'package:predict_ai/home_page.dart';
-import 'package:predict_ai/web_socket.dart';
+
 
 void main() {
   runApp(const MyApp());

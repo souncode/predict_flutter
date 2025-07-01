@@ -1,8 +1,8 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:predict_ai/Widget/websocketmanager.dart';
+
 import 'package:predict_ai/widget/camera_image.dart';
 import 'package:predict_ai/constant/constant.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
 
 class PredictView extends StatefulWidget {
   final Function(int) onConnectStatus;
@@ -13,60 +13,21 @@ class PredictView extends StatefulWidget {
 }
 
 class _PredictViewState extends State<PredictView> {
-  late WebSocketChannel _channel;
-
-  Map<String, String> cameraImages = {};
+  final WebSocketManager _ws = WebSocketManager();
 
   @override
   void initState() {
     super.initState();
-    _connectWebSocket();
+    print("✅ PredictView initialized");
   }
 
-  void _connectWebSocket() {
-    print("🔄 Connect to WebSocket...");
-
-    _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.11:8000/ws/image'),
-    );
-
-    _channel.stream.listen(
-      (data) {
-        final decoded = jsonDecode(data);
-        final String cameraName = decoded['camera'];
-        final String image = decoded['image'];
-
-        setState(() {
-          cameraImages[cameraName] = image;
-        });
-      },
-      onError: (error) {
-        print("⚠️ WebSocket Error: $error");
-        _reconnectWebSocket();
-      },
-      onDone: () {
-        print("❌ WebSocket closed.");
-        _reconnectWebSocket();
-      },
-      cancelOnError: true,
-    );
-  }
-
-  void _reconnectWebSocket() async {
-    await Future.delayed(const Duration(seconds: 2));
-    _connectWebSocket();
-  }
-
-  @override
-  void dispose() {
-    _channel.sink.close();
-    super.dispose();
+  void _sendCaptureCommand() {
+    _ws.send("capture");
+    print("📤 Sent command: capture");
   }
 
   @override
   Widget build(BuildContext context) {
-    final cameraNames = cameraImages.keys.toList();
-
     return Scaffold(
       backgroundColor: MyColor.backgroundColor,
       body: SafeArea(
@@ -74,28 +35,29 @@ class _PredictViewState extends State<PredictView> {
           children: [
             Expanded(
               flex: 8,
-              child: GridView.count(
-                crossAxisCount: 3,
-                crossAxisSpacing: 8,
-                mainAxisSpacing: 8,
-                padding: const EdgeInsets.all(12),
-                children:
-                    cameraNames.map((cameraName) {
+              child: ValueListenableBuilder<Map<String, String>>(
+                valueListenable: _ws.cameraImages,
+                builder: (context, cameraImages, _) {
+                  final cameraNames = cameraImages.keys.toList();
+
+                  return GridView.count(
+                    crossAxisCount: 3,
+                    crossAxisSpacing: 8,
+                    mainAxisSpacing: 8,
+                    padding: const EdgeInsets.all(12),
+                    children: cameraNames.map((cameraName) {
                       return CameraImageWidget(
                         cameraId: cameraName,
                         base64Image: cameraImages[cameraName],
                       );
                     }).toList(),
+                  );
+                },
               ),
             ),
 
-            FloatingActionButton(
-              onPressed: () {
-                _channel.sink.add("capture");
-                print("📤 Sent command capture");
-              },
-              child: const Text("Shot"),
-            ),
+            
+           
           ],
         ),
       ),

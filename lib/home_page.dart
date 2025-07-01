@@ -10,7 +10,7 @@ import 'package:predict_ai/predict_view.dart';
 import 'package:predict_ai/widget/camera_image.dart';
 import 'package:predict_ai/widget/drawer_menu.dart';
 import 'package:predict_ai/constant/constant.dart';
-import 'package:web_socket_channel/web_socket_channel.dart';
+
 import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
 
