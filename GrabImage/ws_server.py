@@ -182,9 +182,8 @@ async def ping_clients_loop():
 @app.get("/scancamera")
 def scan_camera():
     try:
-        # Gọi file Python
         process = subprocess.run(
-            ["python", "check_and_save_cameras.py"],  # 👈 chỉnh path nếu cần
+            ["python", "check_and_save_cameras.py"], 
             capture_output=True,
             text=True
         )
@@ -248,7 +247,7 @@ async def capture_all():
                         "image": base64_img
                     }
 
-                    # Gửi ảnh qua WebSocket
+                    # send to WebSocket
                     for ws in list(clients):
                         try:
                             await asyncio.wait_for(ws.send_json(data), timeout=1.0)
@@ -257,7 +256,7 @@ async def capture_all():
                             print(f"⚠️ Lỗi gửi ảnh đến WebSocket client: {e}")
                             clients.discard(ws) 
 
-                    # Lưu ảnh
+                    # save
                     if issaveimage:
                         os.makedirs(save_path, exist_ok=True)
                         filename = os.path.join(save_path, f"{cam_name}_{timestamp}.jpg")

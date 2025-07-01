@@ -1,8 +1,6 @@
-// lib/services/websocket_manager.dart
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
-
 class WebSocketManager {
   static final WebSocketManager _instance = WebSocketManager._internal();
   factory WebSocketManager() => _instance;
@@ -10,7 +8,6 @@ class WebSocketManager {
   late WebSocketChannel _channel;
   bool _isConnected = false;
 
-  // 👇 ValueNotifier để theo dõi sự thay đổi hình ảnh
   final ValueNotifier<Map<String, String>> cameraImages = ValueNotifier({});
 
   WebSocketManager._internal() {
@@ -19,7 +16,7 @@ class WebSocketManager {
 
   void _connect() {
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.11:8000/ws/image'),
+      Uri.parse('ws://172.20.10.2:8000/ws/image'),
     );
 
     _channel.stream.listen(

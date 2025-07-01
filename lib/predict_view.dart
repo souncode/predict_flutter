@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:predict_ai/Widget/websocketmanager.dart';
-
+import 'package:predict_ai/services/websocketmanager.dart';
 import 'package:predict_ai/widget/camera_image.dart';
 import 'package:predict_ai/constant/constant.dart';
 
@@ -38,6 +37,14 @@ class _PredictViewState extends State<PredictView> {
               child: ValueListenableBuilder<Map<String, String>>(
                 valueListenable: _ws.cameraImages,
                 builder: (context, cameraImages, _) {
+                  if (cameraImages.isEmpty) {
+                    return const Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.blueAccent,
+                      ),
+                    );
+                  }
+
                   final cameraNames = cameraImages.keys.toList();
 
                   return GridView.count(
@@ -45,19 +52,17 @@ class _PredictViewState extends State<PredictView> {
                     crossAxisSpacing: 8,
                     mainAxisSpacing: 8,
                     padding: const EdgeInsets.all(12),
-                    children: cameraNames.map((cameraName) {
-                      return CameraImageWidget(
-                        cameraId: cameraName,
-                        base64Image: cameraImages[cameraName],
-                      );
-                    }).toList(),
+                    children:
+                        cameraNames.map((cameraName) {
+                          return CameraImageWidget(
+                            cameraId: cameraName,
+                            base64Image: cameraImages[cameraName],
+                          );
+                        }).toList(),
                   );
                 },
               ),
             ),
-
-            
-           
           ],
         ),
       ),

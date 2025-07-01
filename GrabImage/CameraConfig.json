@@ -4,8 +4,8 @@
     "cameras": [
         {
             "name": "Cam 1",
-            "serial": "Vir77111397",
-            "ip": "10.64.160.101",
+            "serial": "Vir27193540",
+            "ip": "10.64.240.196",
             "model_index": 0,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -13,8 +13,8 @@
         },
         {
             "name": "Cam 2",
-            "serial": "Vir77111453",
-            "ip": "10.64.160.157",
+            "serial": "Vir27193609",
+            "ip": "10.64.241.9",
             "model_index": 1,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -22,8 +22,8 @@
         },
         {
             "name": "Cam 3",
-            "serial": "Vir77111508",
-            "ip": "10.64.160.212",
+            "serial": "Vir27193626",
+            "ip": "10.64.241.26",
             "model_index": 2,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -31,8 +31,8 @@
         },
         {
             "name": "Cam 4",
-            "serial": "Vir77111556",
-            "ip": "10.64.161.4",
+            "serial": "Vir27193646",
+            "ip": "10.64.241.46",
             "model_index": 3,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -40,8 +40,8 @@
         },
         {
             "name": "Cam 5",
-            "serial": "Vir77111601",
-            "ip": "10.64.161.49",
+            "serial": "Vir27193696",
+            "ip": "10.64.241.96",
             "model_index": 4,
             "trigger_mode": "Off",
             "exposure_time": 5000,
@@ -49,8 +49,8 @@
         },
         {
             "name": "Cam 6",
-            "serial": "Vir77111692",
-            "ip": "10.64.161.140",
+            "serial": "Vir27193714",
+            "ip": "10.64.241.114",
             "model_index": 5,
             "trigger_mode": "Off",
             "exposure_time": 5000,

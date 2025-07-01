@@ -2,7 +2,6 @@ import 'package:flutter/foundation.dart'; // Thêm để dùng kDebugMode
 import 'package:flutter/material.dart';
 import 'package:predict_ai/home_page.dart';
 
-
 void main() {
   runApp(const MyApp());
 }
@@ -16,7 +15,7 @@ class MyApp extends StatelessWidget {
 
     if (kDebugMode) {
       home = Banner(
-        message: 'RUN MODE', 
+        message: 'RUN MODE',
         location: BannerLocation.topEnd,
         color: Colors.redAccent,
         textStyle: const TextStyle(
@@ -29,8 +28,8 @@ class MyApp extends StatelessWidget {
     }
 
     return MaterialApp(
-      debugShowCheckedModeBanner: false, // Tắt banner mặc định
-      title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
+      title: 'Premo Vision',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
       ),

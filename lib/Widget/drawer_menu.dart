@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:predict_ai/Widget/websocketmanager.dart';
+
 import 'package:predict_ai/constant/constant.dart';
+import 'package:predict_ai/services/websocketmanager.dart';
 
 class DrawerMenu extends StatefulWidget {
   final Function(int) onItemSelected;
@@ -21,7 +22,6 @@ class _DrawerMenuState extends State<DrawerMenu> {
           child: Container(
             color: MyColor.appBarColor,
             child: SingleChildScrollView(
-              
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.center,
                 children: [
@@ -55,7 +55,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                               Icons.home,
                               color:
                                   selectedIndex == 1
-                                         ? Colors.white
+                                      ? Colors.white
                                       : MyColor.drawerButtonColor,
                             ),
                           ),
@@ -94,7 +94,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                               Icons.settings,
                               color:
                                   selectedIndex == 2
-                                            ? Colors.white
+                                      ? Colors.white
                                       : MyColor.drawerButtonColor,
                             ),
                           ),
@@ -133,7 +133,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                               Icons.connecting_airports_rounded,
                               color:
                                   selectedIndex == 3
-                                             ? Colors.white
+                                      ? Colors.white
                                       : MyColor.drawerButtonColor,
                             ),
                           ),
@@ -192,18 +192,37 @@ class _DrawerMenuState extends State<DrawerMenu> {
                       ),
                     ),
                   ),
-          
-                  SizedBox(height: 100),
-                  GestureDetector(
-                    onTap: (){
-                       WebSocketManager().send("capture");
-                      
-                    },
-                    child: Icon(Icons.lan_rounded,color: const Color.fromARGB(255, 108, 248, 113),)),
+
+                  SizedBox(height: 200),
+                  Text("Status", style: TextStyle(color: Colors.white)),
+                  SizedBox(height: 30),
+                  Icon(
+                    Icons.lan_rounded,
+                    color: const Color.fromARGB(255, 108, 248, 113),
+                  ),
                   SizedBox(height: 20),
-                  Icon(Icons.camera_enhance,color: const Color.fromARGB(255, 108, 248, 113)),
+                  Icon(
+                    Icons.camera_enhance,
+                    color: const Color.fromARGB(255, 108, 248, 113),
+                  ),
                   SizedBox(height: 20),
-                  Icon(Icons.device_hub,color: const Color.fromARGB(255, 108, 248, 113)),
+                  Icon(
+                    Icons.device_hub,
+                    color: const Color.fromARGB(255, 108, 248, 113),
+                  ),
+                  Padding(
+                    padding: const EdgeInsets.all(8.0),
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.greenAccent,
+                        foregroundColor: Colors.red,
+                      ),
+                      onPressed: () {
+                        WebSocketManager().send("capture");
+                      },
+                      child: Icon(Icons.camera_alt),
+                    ),
+                  ),
                 ],
               ),
             ),
