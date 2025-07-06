@@ -12,6 +12,7 @@ import base64
 from ultralytics import YOLO
 import subprocess
 import time
+import psutil
 
 from MvCameraControl_class import *
 
@@ -28,6 +29,28 @@ print(f"🔌 Số lượng client WebSocket đang kết nối: {len(clients)}")
 camera_configs = []
 issaveimage = False
 save_path = "images"
+
+
+async def send_system_status():
+    while True:
+        cpu = psutil.cpu_percent()
+        disk = psutil.disk_usage('/').percent
+        cam_count = len(cams)
+        ram = psutil.virtual_memory().percent
+        try:
+            for ws in list(clients):
+                await ws.send_json({
+                    "type": "system_status",
+                    "cpu": cpu,
+                    "storage": disk,
+                    "ram": ram, 
+                    "cameras": cam_count,
+                    "system_ok": True  # Hoặc logic kiểm tra khác
+                })
+        except Exception as e:
+            clients.discard(ws)
+        await asyncio.sleep(5)
+
 def load_camera_config():
   
     global camera_configs,issaveimage, save_path
@@ -110,6 +133,7 @@ def startup_event():
     with cams_lock:
         init_all_cameras_from_config()
     asyncio.create_task(ping_clients_loop())
+    asyncio.create_task(send_system_status())
        
 
 @app.websocket("/ws/image")

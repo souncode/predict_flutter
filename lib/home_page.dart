@@ -1,17 +1,13 @@
-import 'dart:convert';
-import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:predict_ai/Widget/dashboardstats.dart';
-import 'package:predict_ai/Widget/pie_chart.dart';
+import 'package:predict_ai/Widget/system_status.dart';
+import 'package:predict_ai/Widget/systemstatusbar.dart';
 import 'package:predict_ai/about_page.dart';
 import 'package:predict_ai/config_page.dart';
 import 'package:predict_ai/connection_page.dart';
 import 'package:predict_ai/predict_view.dart';
-import 'package:predict_ai/widget/camera_image.dart';
 import 'package:predict_ai/widget/drawer_menu.dart';
 import 'package:predict_ai/constant/constant.dart';
-
-import 'dart:math';
 import 'package:google_fonts/google_fonts.dart';
 
 class HomePage extends StatefulWidget {
@@ -39,18 +35,39 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Column(
+        title: Row(
           children: [
-            Text(
-              "Premo Industrial Vision Dashboard",
-              style: GoogleFonts.lilitaOne(color: Color(0xFF60A5FA)),
+            Column(
+              children: [
+                Text(
+                  "Premo Industrial Vision Dashboard",
+                  style: GoogleFonts.lilitaOne(color: Color(0xFF60A5FA)),
+                ),
+                Text(
+                  "AI-Powered 6-Camera Inspection System",
+                  style: TextStyle(
+                    fontSize: 10,
+                    color: Color.fromARGB(255, 137, 148, 161),
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
             ),
-            Text(
-              "AI-Powered 6-Camera Inspection System",
-              style: TextStyle(
-                fontSize: 10,
-                color: Color.fromARGB(255, 137, 148, 161),
-                fontWeight: FontWeight.bold,
+            Spacer(),
+            Padding(
+              padding: const EdgeInsets.all(8.0),
+              child: ValueListenableBuilder<SystemMetrics>(
+                valueListenable: systemMetricsNotifier,
+                builder: (context, metrics, _) {
+                  return SystemStatusBar(
+                    activeCameras: metrics.activeCameras,
+                    totalCameras: metrics.totalCameras,
+                    cpuUsage: metrics.cpuUsage,
+                    ramUsage: metrics.ramUsage,
+                    storageUsage: metrics.storageUsage,
+                    systemOK: metrics.systemOK,
+                  );
+                },
               ),
             ),
           ],
@@ -122,16 +139,11 @@ class _HomePageState extends State<HomePage> {
                   padding: const EdgeInsets.all(4.0),
                   child: Column(
                     mainAxisAlignment: MainAxisAlignment.start,
-                    children: [
-                      DashboardStats(),
-                      Text("Real-time Analytics"),
-                     
-                    ],
+                    children: [DashboardStats(), Text("Real-time Analytics")],
                   ),
                 ),
               ),
             ),
-         
           ],
         ),
       ),

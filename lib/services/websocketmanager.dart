@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:predict_ai/Widget/system_status.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class WebSocketManager {
@@ -15,13 +16,19 @@ class WebSocketManager {
   final ValueNotifier<double> totalProcessing = ValueNotifier(0);
   final ValueNotifier<int> totalDetections = ValueNotifier(0);
   final ValueNotifier<int> activeCameras = ValueNotifier(0);
+  final ValueNotifier<int> cameraOnline = ValueNotifier(0);
+  final ValueNotifier<double> cpuUsage = ValueNotifier(0);
+  final ValueNotifier<double> storageUsage = ValueNotifier(0);
+  final ValueNotifier<bool> systemOk = ValueNotifier(true);
   List<dynamic> cameraConfigs = [];
 
-void loadCameraConfig() async {
-  final configJson = await rootBundle.loadString('GrabImage/CameraConfig.json');
-  final config = jsonDecode(configJson);
-  cameraConfigs = config['cameras'];
-}
+  void loadCameraConfig() async {
+    final configJson = await rootBundle.loadString(
+      'GrabImage/CameraConfig.json',
+    );
+    final config = jsonDecode(configJson);
+    cameraConfigs = config['cameras'];
+  }
 
   WebSocketManager._internal() {
     _connect();
@@ -37,10 +44,11 @@ void loadCameraConfig() async {
         try {
           final decoded = jsonDecode(data);
 
-          if (decoded['type'] == 'processing_summary' && decoded.containsKey('total_processing')) {
-  totalProcessing.value = decoded['total_processing'].toDouble();
-  print("📊 Updated total processing: ${totalProcessing.value} ms");
-}
+          if (decoded['type'] == 'processing_summary' &&
+              decoded.containsKey('total_processing')) {
+            totalProcessing.value = decoded['total_processing'].toDouble();
+            print("📊 Updated total processing: ${totalProcessing.value} ms");
+          }
 
           // 🖼️ Cập nhật ảnh nếu có
           if (decoded.containsKey('camera') && decoded.containsKey('image')) {
@@ -52,15 +60,29 @@ void loadCameraConfig() async {
             cameraImages.value = current;
             print("📥 Updated image from $camera");
           }
-            if (decoded['type'] == 'processing_summary') {
-        totalDetections.value++;
-        print("🔁 +1 lần xử lý → Total Detections: ${totalDetections.value}");
-        totalProcessing.value = decoded['total_processing']?.toDouble() ?? 0;
-          if (decoded.containsKey('total_cameras')) {
-    activeCameras.value = decoded['total_cameras'];
-    print("📸 Số camera hoạt động: ${activeCameras.value}");
-  }
-      }
+
+          if (decoded['type'] == 'processing_summary') {
+            totalDetections.value++;
+            print(
+              "🔁 +1 lần xử lý → Total Detections: ${totalDetections.value}",
+            );
+            totalProcessing.value =
+                decoded['total_processing']?.toDouble() ?? 0;
+            if (decoded.containsKey('total_cameras')) {
+              activeCameras.value = decoded['total_cameras'];
+              print("📸 Số camera hoạt động: ${activeCameras.value}");
+            }
+          }
+          if (decoded['type'] == 'system_status') {
+            systemMetricsNotifier.value = SystemMetrics(
+              activeCameras: decoded['active'] ?? 0,
+              totalCameras: decoded['total'] ?? 6,
+              cpuUsage: (decoded['cpu'] ?? 0).toDouble(),
+              ramUsage: (decoded['ram'] ?? 0).toDouble(),
+              storageUsage: (decoded['storage'] ?? 0).toDouble(),
+              systemOK: decoded['ok'] ?? true,
+            );
+          }
         } catch (e) {
           print("❌ Error decoding WebSocket message: $e");
         }
