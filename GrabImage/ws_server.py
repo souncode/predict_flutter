@@ -17,7 +17,7 @@ from MvCameraControl_class import *
 app = FastAPI()
 
 
-model_paths = ["models/model1.pt", "models/model2.pt", "models/model3.pt"]
+model_paths = ["models/model1.pt", "models/model2.pt", "models/model3.pt","models/model3.pt","models/model3.pt","models/model3.pt"]
 models = [YOLO(p) for p in model_paths]
 
 cams = []
@@ -142,6 +142,7 @@ async def handle_capture_and_send(websocket: WebSocket):
         for cam_info in cams:
             cam = cam_info["cam"]
             cam_name = cam_info["name"]
+            model_index = cam_info["model_index"]
 
             stOutFrame = MV_FRAME_OUT()
             memset(byref(stOutFrame), 0, sizeof(stOutFrame))
@@ -157,6 +158,21 @@ async def handle_capture_and_send(websocket: WebSocket):
                     buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
                     np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
 
+                    # ✅ Chạy YOLO
+                    results_yolo = models[model_index](np_img)[0]
+
+                    # ✅ Vẽ bounding box
+                    for box in results_yolo.boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cls = int(box.cls[0])
+                        conf = float(box.conf[0])
+                        label = f"{results_yolo.names[cls]} {conf:.2f}"
+
+                        cv2.rectangle(np_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(np_img, label, (x1, y1 - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+                    # ✅ Gửi ảnh đã vẽ
                     _, buffer = cv2.imencode('.jpg', np_img)
                     base64_img = base64.b64encode(buffer).decode()
 
@@ -167,8 +183,65 @@ async def handle_capture_and_send(websocket: WebSocket):
 
                     print(f"✅ Sent image from {cam_name} to {websocket.client.host}:{websocket.client.port}")
 
+                except Exception as e:
+                    print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
+
                 finally:
                     cam.MV_CC_FreeImageBuffer(stOutFrame)
+async def handle_capture_and_send(websocket: WebSocket):
+    with cams_lock:
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+        for cam_info in cams:
+            cam = cam_info["cam"]
+            cam_name = cam_info["name"]
+            model_index = cam_info["model_index"]
+
+            stOutFrame = MV_FRAME_OUT()
+            memset(byref(stOutFrame), 0, sizeof(stOutFrame))
+
+            ret = cam.MV_CC_GetImageBuffer(stOutFrame, 1000)
+            if ret == 0 and stOutFrame.pBufAddr:
+                try:
+                    width = stOutFrame.stFrameInfo.nWidth
+                    height = stOutFrame.stFrameInfo.nHeight
+                    buf_len = stOutFrame.stFrameInfo.nFrameLen
+
+                    buf_type = (c_ubyte * buf_len)
+                    buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
+                    np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
+
+                    # ✅ Chạy YOLO
+                    results_yolo = models[model_index](np_img)[0]
+
+                    # ✅ Vẽ bounding box
+                    for box in results_yolo.boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cls = int(box.cls[0])
+                        conf = float(box.conf[0])
+                        label = f"{results_yolo.names[cls]} {conf:.2f}"
+
+                        cv2.rectangle(np_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(np_img, label, (x1, y1 - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+                    # ✅ Gửi ảnh đã vẽ
+                    _, buffer = cv2.imencode('.jpg', np_img)
+                    base64_img = base64.b64encode(buffer).decode()
+
+                    await websocket.send_json({
+                        "camera": cam_name,
+                        "image": base64_img
+                    })
+
+                    print(f"✅ Sent image from {cam_name} to {websocket.client.host}:{websocket.client.port}")
+
+                except Exception as e:
+                    print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
+
+                finally:
+                    cam.MV_CC_FreeImageBuffer(stOutFrame)
+
 async def ping_clients_loop():
     while True:
         await asyncio.sleep(10)
@@ -213,7 +286,7 @@ async def capture_all():
             if not cams:
                 return JSONResponse(status_code=500, content={"error": "Không có camera nào đang hoạt động"})
 
-            results = []
+            results = []  # 🔧 Sửa lỗi thiếu biến này
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
             for idx, cam_info in enumerate(cams):
@@ -239,6 +312,21 @@ async def capture_all():
                     buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
                     np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
 
+                    # 🔍 1. Chạy mô hình YOLO
+                    results_yolo = models[model_index](np_img)[0]
+
+                    # 🖍️ 2. Vẽ bounding box
+                    for box in results_yolo.boxes:
+                        x1, y1, x2, y2 = map(int, box.xyxy[0])
+                        cls = int(box.cls[0])
+                        conf = float(box.conf[0])
+                        label = f"{results_yolo.names[cls]} {conf:.2f}"
+
+                        cv2.rectangle(np_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                        cv2.putText(np_img, label, (x1, y1 - 5),
+                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+
+                    # 📤 3. Encode ảnh đã vẽ và gửi qua WebSocket
                     _, buffer = cv2.imencode('.jpg', np_img)
                     base64_img = base64.b64encode(buffer).decode()
 
@@ -247,16 +335,15 @@ async def capture_all():
                         "image": base64_img
                     }
 
-                    # send to WebSocket
                     for ws in list(clients):
                         try:
                             await asyncio.wait_for(ws.send_json(data), timeout=1.0)
                             print(f"📤 Gửi ảnh từ {cam_name} đến {getattr(ws.client, 'host', 'unknown')}:{getattr(ws.client, 'port', 'unknown')}")
                         except Exception as e:
                             print(f"⚠️ Lỗi gửi ảnh đến WebSocket client: {e}")
-                            clients.discard(ws) 
+                            clients.discard(ws)
 
-                    # save
+                    # 💾 4. Lưu ảnh nếu cấu hình bật
                     if issaveimage:
                         os.makedirs(save_path, exist_ok=True)
                         filename = os.path.join(save_path, f"{cam_name}_{timestamp}.jpg")
@@ -264,7 +351,6 @@ async def capture_all():
                         print(f"✅ Ảnh từ {cam_name} đã lưu tại {filename}")
                     else:
                         filename = None
-                    print(f"✅ Ảnh từ {cam_name} đã lưu và gửi WebSocket")
 
                     results.append(filename)
 
@@ -280,6 +366,7 @@ async def capture_all():
     except Exception as e:
         print(f"🔥 Lỗi trong /capture: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
