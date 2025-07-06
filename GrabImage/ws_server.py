@@ -11,6 +11,7 @@ from threading import Lock
 import base64
 from ultralytics import YOLO
 import subprocess
+import time
 
 from MvCameraControl_class import *
 
@@ -178,7 +179,8 @@ async def handle_capture_and_send(websocket: WebSocket):
 
                     await websocket.send_json({
                         "camera": cam_name,
-                        "image": base64_img
+                        "image": base64_img,
+                        "avg_processing": processing_ms
                     })
 
                     print(f"✅ Sent image from {cam_name} to {websocket.client.host}:{websocket.client.port}")
@@ -191,6 +193,7 @@ async def handle_capture_and_send(websocket: WebSocket):
 async def handle_capture_and_send(websocket: WebSocket):
     with cams_lock:
         timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        total_time_ms = 0  # ✅ Tổng thời gian xử lý toàn bộ camera
 
         for cam_info in cams:
             cam = cam_info["cam"]
@@ -210,11 +213,10 @@ async def handle_capture_and_send(websocket: WebSocket):
                     buf_type = (c_ubyte * buf_len)
                     buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
                     np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
-
-                    # ✅ Chạy YOLO
+                    start_time = time.time()
                     results_yolo = models[model_index](np_img)[0]
 
-                    # ✅ Vẽ bounding box
+                    # 🖍️ Vẽ bounding box
                     for box in results_yolo.boxes:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         cls = int(box.cls[0])
@@ -225,22 +227,38 @@ async def handle_capture_and_send(websocket: WebSocket):
                         cv2.putText(np_img, label, (x1, y1 - 5),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-                    # ✅ Gửi ảnh đã vẽ
+
+                    processing_time_ms = round((time.time() - start_time) * 1000, 2)
+                    total_time_ms += processing_time_ms
+
+
                     _, buffer = cv2.imencode('.jpg', np_img)
                     base64_img = base64.b64encode(buffer).decode()
 
                     await websocket.send_json({
+                        "type": "camera_image",
                         "camera": cam_name,
-                        "image": base64_img
+                        "image": base64_img,
+                        "avg_processing": processing_time_ms
                     })
 
-                    print(f"✅ Sent image from {cam_name} to {websocket.client.host}:{websocket.client.port}")
+                    print(f"✅ Sent image from {cam_name} ({processing_time_ms}ms) to {websocket.client.host}:{websocket.client.port}")
 
                 except Exception as e:
                     print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
 
                 finally:
                     cam.MV_CC_FreeImageBuffer(stOutFrame)
+
+        try:
+            await websocket.send_json({
+                "type": "processing_summary",
+                "total_processing": round(total_time_ms, 2),
+                "total_cameras": len(cams)
+            })
+            print(f"📊 Tổng thời gian xử lý toàn bộ camera: {round(total_time_ms, 2)}ms")
+        except Exception as e:
+            print(f"⚠️ Lỗi gửi tổng thời gian xử lý tới client: {e}")
 
 async def ping_clients_loop():
     while True:
@@ -249,7 +267,7 @@ async def ping_clients_loop():
             try:
                 await ws.send_json({"ping": "ping"})
             except Exception as e:
-                print(f"⚠️ Client không phản hồi ping → xóa: {e}")
+                print(f"⚠️ Client do not response ping → Delete: {e}")
                 clients.discard(ws)
 
 @app.get("/scancamera")
@@ -284,12 +302,13 @@ async def capture_all():
     try:
         with cams_lock:
             if not cams:
-                return JSONResponse(status_code=500, content={"error": "Không có camera nào đang hoạt động"})
+                return JSONResponse(status_code=500, content={"error": "No active camera found"})
 
-            results = []  # 🔧 Sửa lỗi thiếu biến này
+            results = []
+            total_time_ms = 0  
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-            for idx, cam_info in enumerate(cams):
+            for cam_info in cams:
                 cam = cam_info["cam"]
                 model_index = cam_info["model_index"]
                 cam_name = cam_info["name"]
@@ -311,11 +330,8 @@ async def capture_all():
                     buf_type = (c_ubyte * buf_len)
                     buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
                     np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
-
-                    # 🔍 1. Chạy mô hình YOLO
+                    start_time = time.time()
                     results_yolo = models[model_index](np_img)[0]
-
-                    # 🖍️ 2. Vẽ bounding box
                     for box in results_yolo.boxes:
                         x1, y1, x2, y2 = map(int, box.xyxy[0])
                         cls = int(box.cls[0])
@@ -326,46 +342,64 @@ async def capture_all():
                         cv2.putText(np_img, label, (x1, y1 - 5),
                                     cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-                    # 📤 3. Encode ảnh đã vẽ và gửi qua WebSocket
+                    processing_time_ms = round((time.time() - start_time) * 1000, 2)
+                    total_time_ms += processing_time_ms
+
                     _, buffer = cv2.imencode('.jpg', np_img)
                     base64_img = base64.b64encode(buffer).decode()
 
                     data = {
+                        "type": "camera_image",
                         "camera": cam_name,
-                        "image": base64_img
+                        "image": base64_img,
+                        "avg_processing": processing_time_ms
                     }
 
                     for ws in list(clients):
                         try:
                             await asyncio.wait_for(ws.send_json(data), timeout=1.0)
-                            print(f"📤 Gửi ảnh từ {cam_name} đến {getattr(ws.client, 'host', 'unknown')}:{getattr(ws.client, 'port', 'unknown')}")
+                            print(f"📤 Sent from {cam_name} ({processing_time_ms}ms) to {getattr(ws.client, 'host', 'unknown')}:{getattr(ws.client, 'port', 'unknown')}")
                         except Exception as e:
-                            print(f"⚠️ Lỗi gửi ảnh đến WebSocket client: {e}")
+                            print(f"⚠️ Sent to WebSocket client fail: {e}")
                             clients.discard(ws)
 
-                    # 💾 4. Lưu ảnh nếu cấu hình bật
+                    # 💾 Lưu ảnh nếu bật
                     if issaveimage:
                         os.makedirs(save_path, exist_ok=True)
                         filename = os.path.join(save_path, f"{cam_name}_{timestamp}.jpg")
                         cv2.imwrite(filename, np_img)
-                        print(f"✅ Ảnh từ {cam_name} đã lưu tại {filename}")
+                        print(f"✅ Image from {cam_name} saved - {filename}")
                     else:
                         filename = None
 
                     results.append(filename)
 
                 except Exception as e:
-                    print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
+                    print(f"❌ Error when predict {cam_name}: {e}")
                     results.append(None)
 
                 finally:
                     cam.MV_CC_FreeImageBuffer(stOutFrame)
+
+         
+            for ws in list(clients):
+                try:
+                    await asyncio.wait_for(ws.send_json({
+                    "type": "processing_summary",
+                    "total_processing": round(total_time_ms, 2),
+                    "total_cameras": len(cams)   
+                }), timeout=1.0)
+                    print(f" total_processing camera: {round(total_time_ms, 2)}ms")
+                except Exception as e:
+                    print(f"⚠️ Error when sent processing time: {e}")
+                    clients.discard(ws)
 
             return JSONResponse(content={"images": results})
 
     except Exception as e:
         print(f"🔥 Lỗi trong /capture: {e}")
         return JSONResponse(status_code=500, content={"error": str(e)})
+
 
 if __name__ == "__main__":
     import uvicorn

@@ -1,17 +1,29 @@
 import 'package:flutter/material.dart';
+import 'package:predict_ai/Widget/pie_chart.dart';
+import 'package:predict_ai/services/websocketmanager.dart'; // ✅ Import đúng
 
-class DashboardStats extends StatelessWidget {
+class DashboardStats extends StatefulWidget {
   const DashboardStats({super.key});
 
+  @override
+  State<DashboardStats> createState() => _DashboardStatsState();
+}
+
+class _DashboardStatsState extends State<DashboardStats> {
   @override
   Widget build(BuildContext context) {
     return Column(
       children: [
-        _buildStatCard(
-          icon: Icons.visibility,
-          title: 'Total Detections',
-          value: '1.273',
-          iconColor: Colors.blueAccent,
+        ValueListenableBuilder<int>(
+          valueListenable: WebSocketManager().totalDetections,
+          builder: (context, count, _) {
+            return _buildStatCard(
+              icon: Icons.visibility,
+              title: 'Total Detections',
+              value: '$count',
+              iconColor: Colors.blueAccent,
+            );
+          },
         ),
         _buildStatCard(
           icon: Icons.check_circle,
@@ -21,18 +33,52 @@ class DashboardStats extends StatelessWidget {
           showProgressBar: true,
           progress: 0.942,
         ),
-        _buildStatCard(
-          icon: Icons.videocam,
-          title: 'Active Cameras',
-          value: '6/6',
-          iconColor: Colors.greenAccent,
-          dots: 6,
+        ValueListenableBuilder<int>(
+          valueListenable: WebSocketManager().activeCameras,
+          builder: (context, count, _) {
+            return _buildStatCard(
+              icon: Icons.videocam,
+              title: 'Active Cameras',
+              value:
+                  '$count/${WebSocketManager().cameraConfigs.length}', // nếu có số tổng trong config
+              iconColor: Colors.greenAccent,
+              dots: count,
+            );
+          },
         ),
-        _buildStatCard(
-          icon: Icons.timer,
-          title: 'Avg Processing',
-          value: '156ms',
-          valueColor: Colors.amber,
+
+        // ✅ Widget realtime với WebSocketManager
+        ValueListenableBuilder<double>(
+          valueListenable: WebSocketManager().totalProcessing,
+          builder: (context, value, _) {
+            return _buildStatCard(
+              icon: Icons.timer,
+              title: 'Total Processing',
+              value: '${value.toStringAsFixed(0)} ms',
+              valueColor: Colors.amber,
+            );
+          },
+        ),
+
+        Container(
+          margin: const EdgeInsets.symmetric(vertical: 3),
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            color: const Color(0xFF1B2330),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Column(
+            children: [
+              Text(
+                "Chart",
+                style: const TextStyle(color: Colors.white70, fontSize: 14),
+              ),
+              SizedBox(
+                height: 300,
+                child: PieChartRate(okCount: 23, ngCount: 10),
+              ),
+            ],
+          ),
         ),
       ],
     );
@@ -94,8 +140,11 @@ class DashboardStats extends StatelessWidget {
                 dots,
                 (_) => Padding(
                   padding: const EdgeInsets.symmetric(horizontal: 2),
-                  child: Icon(Icons.fiber_manual_record,
-                      size: 10, color: Colors.greenAccent),
+                  child: Icon(
+                    Icons.fiber_manual_record,
+                    size: 10,
+                    color: Colors.greenAccent,
+                  ),
                 ),
               ),
             ),

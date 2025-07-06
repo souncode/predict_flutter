@@ -125,11 +125,7 @@ class _HomePageState extends State<HomePage> {
                     children: [
                       DashboardStats(),
                       Text("Real-time Analytics"),
-                      SizedBox(
-                        height: 300,
-                        child: PieChartRate(okCount: 23, ngCount: 10),
-                      ),
-                      Card(),
+                     
                     ],
                   ),
                 ),
