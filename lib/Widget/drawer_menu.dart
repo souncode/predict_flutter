@@ -204,7 +204,7 @@ class _DrawerMenuState extends State<DrawerMenu> {
                   ValueListenableBuilder<SystemMetrics>(
                     valueListenable: systemMetricsNotifier,
                     builder: (context, metrics, _) {
-                      final bool cameraOK = metrics.activeCameras >= 0;
+                      final bool cameraOK = metrics.activeCameras > 0;
                       return Icon(
                         Icons.camera_enhance,
                         color:
