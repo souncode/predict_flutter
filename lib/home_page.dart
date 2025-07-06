@@ -60,8 +60,6 @@ class _HomePageState extends State<HomePage> {
                 valueListenable: systemMetricsNotifier,
                 builder: (context, metrics, _) {
                   return SystemStatusBar(
-                    activeCameras: metrics.activeCameras,
-                    totalCameras: metrics.totalCameras,
                     cpuUsage: metrics.cpuUsage,
                     ramUsage: metrics.ramUsage,
                     storageUsage: metrics.storageUsage,

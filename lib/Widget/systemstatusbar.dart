@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 
 class SystemStatusBar extends StatelessWidget {
-  final int activeCameras;
-  final int totalCameras;
   final double cpuUsage;
   final double ramUsage;
   final double storageUsage;
@@ -10,8 +8,6 @@ class SystemStatusBar extends StatelessWidget {
 
   const SystemStatusBar({
     super.key,
-    required this.activeCameras,
-    required this.totalCameras,
     required this.cpuUsage,
     required this.ramUsage,
     required this.storageUsage,
@@ -26,11 +22,6 @@ class SystemStatusBar extends StatelessWidget {
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         _buildTag(
-          icon: Icons.wifi,
-          text: '$activeCameras/$totalCameras Online',
-          color: Colors.green,
-        ),
-        _buildTag(
           icon: Icons.memory,
           text: 'CPU: ${cpuUsage.toStringAsFixed(0)}%',
           color: Colors.blueAccent,
@@ -41,10 +32,10 @@ class SystemStatusBar extends StatelessWidget {
           color: Colors.amber.shade700,
         ),
         _buildTag(
-  icon: Icons.developer_board,
-  text: 'RAM: ${ramUsage.toStringAsFixed(0)}%',
-  color: Colors.purpleAccent,
-),
+          icon: Icons.developer_board,
+          text: 'RAM: ${ramUsage.toStringAsFixed(0)}%',
+          color: Colors.purpleAccent,
+        ),
         _buildTag(
           icon: Icons.monitor_heart,
           text: systemOK ? 'System OK' : 'System Error',

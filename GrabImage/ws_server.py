@@ -44,7 +44,6 @@ async def send_system_status():
                     "cpu": cpu,
                     "storage": disk,
                     "ram": ram, 
-                    "cameras": cam_count,
                     "system_ok": True  # Hoặc logic kiểm tra khác
                 })
         except Exception as e:

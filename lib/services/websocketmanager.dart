@@ -75,8 +75,7 @@ class WebSocketManager {
           }
           if (decoded['type'] == 'system_status') {
             systemMetricsNotifier.value = SystemMetrics(
-              activeCameras: decoded['active'] ?? 0,
-              totalCameras: decoded['total'] ?? 6,
+
               cpuUsage: (decoded['cpu'] ?? 0).toDouble(),
               ramUsage: (decoded['ram'] ?? 0).toDouble(),
               storageUsage: (decoded['storage'] ?? 0).toDouble(),
