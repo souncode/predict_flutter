@@ -20,10 +20,7 @@ class _PredictViewState extends State<PredictView> {
     print("✅ PredictView initialized");
   }
 
-  void _sendCaptureCommand() {
-    _ws.send("capture");
-    print("📤 Sent command: capture");
-  }
+
 
   @override
   Widget build(BuildContext context) {

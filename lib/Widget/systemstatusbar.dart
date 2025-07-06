@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class SystemStatusBar extends StatelessWidget {
+  final int activeCameras;
+  final int totalCameras;
   final double cpuUsage;
   final double ramUsage;
   final double storageUsage;
@@ -8,6 +10,8 @@ class SystemStatusBar extends StatelessWidget {
 
   const SystemStatusBar({
     super.key,
+    required this.activeCameras,
+    required this.totalCameras,
     required this.cpuUsage,
     required this.ramUsage,
     required this.storageUsage,
@@ -52,6 +56,7 @@ class SystemStatusBar extends StatelessWidget {
             ),
           ],
         ),
+        SizedBox(width: 20),
       ],
     );
   }

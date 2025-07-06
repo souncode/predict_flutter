@@ -10,7 +10,6 @@ class WebSocketManager {
 
   late WebSocketChannel _channel;
   bool _isConnected = false;
-
   final ValueNotifier<Map<String, String>> cameraImages = ValueNotifier({});
   final ValueNotifier<double> avgProcessing = ValueNotifier(0);
   final ValueNotifier<double> totalProcessing = ValueNotifier(0);
@@ -20,6 +19,7 @@ class WebSocketManager {
   final ValueNotifier<double> cpuUsage = ValueNotifier(0);
   final ValueNotifier<double> storageUsage = ValueNotifier(0);
   final ValueNotifier<bool> systemOk = ValueNotifier(true);
+  final ValueNotifier<bool> isConnectedNotifier = ValueNotifier(false);
   List<dynamic> cameraConfigs = [];
 
   void loadCameraConfig() async {
@@ -41,6 +41,7 @@ class WebSocketManager {
 
     _channel.stream.listen(
       (data) {
+        isConnectedNotifier.value = true;
         try {
           final decoded = jsonDecode(data);
 
@@ -75,11 +76,12 @@ class WebSocketManager {
           }
           if (decoded['type'] == 'system_status') {
             systemMetricsNotifier.value = SystemMetrics(
-
+              activeCameras: decoded['active'] ?? 0,
+              totalCameras: decoded['total'] ?? 0,
               cpuUsage: (decoded['cpu'] ?? 0).toDouble(),
               ramUsage: (decoded['ram'] ?? 0).toDouble(),
               storageUsage: (decoded['storage'] ?? 0).toDouble(),
-              systemOK: decoded['ok'] ?? true,
+              systemOK: decoded['system_ok'] ?? true,
             );
           }
         } catch (e) {
@@ -87,10 +89,12 @@ class WebSocketManager {
         }
       },
       onError: (error) {
+        isConnectedNotifier.value = false;
         print("⚠️ WebSocket error: $error");
         _reconnect();
       },
       onDone: () {
+        isConnectedNotifier.value = false;
         print("❌ WebSocket closed.");
         _reconnect();
       },

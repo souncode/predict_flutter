@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:predict_ai/Widget/pie_chart.dart';
+import 'package:predict_ai/Widget/system_status.dart';
 import 'package:predict_ai/services/websocketmanager.dart'; // ✅ Import đúng
 
 class DashboardStats extends StatefulWidget {
@@ -30,19 +31,22 @@ class _DashboardStatsState extends State<DashboardStats> {
           title: 'Pass Rate',
           value: '94.2%',
           valueColor: Colors.greenAccent,
+          iconColor: Colors.lightGreen,
           showProgressBar: true,
           progress: 0.942,
         ),
-        ValueListenableBuilder<int>(
-          valueListenable: WebSocketManager().activeCameras,
-          builder: (context, count, _) {
+        ValueListenableBuilder<SystemMetrics>(
+          valueListenable: systemMetricsNotifier,
+          builder: (context, metrics, _) {
             return _buildStatCard(
               icon: Icons.videocam,
               title: 'Active Cameras',
-              value:
-                  '$count/${WebSocketManager().cameraConfigs.length}', // nếu có số tổng trong config
-              iconColor: Colors.greenAccent,
-              dots: count,
+              value: '${metrics.activeCameras}/${metrics.totalCameras}',
+              iconColor:
+                  metrics.activeCameras == metrics.totalCameras
+                      ? Colors.greenAccent
+                      : Colors.grey,
+              dots: metrics.activeCameras,
             );
           },
         ),
@@ -52,6 +56,7 @@ class _DashboardStatsState extends State<DashboardStats> {
           valueListenable: WebSocketManager().totalProcessing,
           builder: (context, value, _) {
             return _buildStatCard(
+              iconColor: Colors.redAccent,
               icon: Icons.timer,
               title: 'Total Processing',
               value: '${value.toStringAsFixed(0)} ms',

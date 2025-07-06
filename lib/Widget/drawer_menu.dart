@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:predict_ai/Widget/system_status.dart';
 
 import 'package:predict_ai/constant/constant.dart';
 import 'package:predict_ai/services/websocketmanager.dart';
@@ -13,7 +14,6 @@ class DrawerMenu extends StatefulWidget {
 
 class _DrawerMenuState extends State<DrawerMenu> {
   int selectedIndex = 0;
-  final WebSocketManager _wsManager = WebSocketManager();
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -201,14 +201,32 @@ class _DrawerMenuState extends State<DrawerMenu> {
                     color: const Color.fromARGB(255, 108, 248, 113),
                   ),
                   SizedBox(height: 20),
-                  Icon(
-                    Icons.camera_enhance,
-                    color: const Color.fromARGB(255, 108, 248, 113),
+                  ValueListenableBuilder<SystemMetrics>(
+                    valueListenable: systemMetricsNotifier,
+                    builder: (context, metrics, _) {
+                      final bool cameraOK = metrics.activeCameras >= 0;
+                      return Icon(
+                        Icons.camera_enhance,
+                        color:
+                            cameraOK
+                                ? const Color.fromARGB(255, 108, 248, 113)
+                                : Colors.grey,
+                      );
+                    },
                   ),
+
                   SizedBox(height: 20),
-                  Icon(
-                    Icons.device_hub,
-                    color: const Color.fromARGB(255, 108, 248, 113),
+                  ValueListenableBuilder<bool>(
+                    valueListenable: WebSocketManager().isConnectedNotifier,
+                    builder: (context, connected, _) {
+                      return Icon(
+                        Icons.device_hub,
+                        color:
+                            connected
+                                ? const Color.fromARGB(255, 108, 248, 113)
+                                : Colors.grey,
+                      );
+                    },
                   ),
                   Padding(
                     padding: const EdgeInsets.all(8.0),

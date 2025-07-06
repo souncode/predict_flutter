@@ -13,6 +13,7 @@ from ultralytics import YOLO
 import subprocess
 import time
 import psutil
+import logging
 
 from MvCameraControl_class import *
 
@@ -44,7 +45,9 @@ async def send_system_status():
                     "cpu": cpu,
                     "storage": disk,
                     "ram": ram, 
-                    "system_ok": True  # Hoặc logic kiểm tra khác
+                    "system_ok": True, 
+                    "active": cam_count,
+                    "total": len(camera_configs), # 
                 })
         except Exception as e:
             clients.discard(ws)
