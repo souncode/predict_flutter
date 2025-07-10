@@ -1,4 +1,6 @@
 from fastapi import FastAPI, WebSocket
+import threading
+import asyncio
 from fastapi.responses import JSONResponse
 from datetime import datetime
 from ctypes import *
@@ -99,16 +101,26 @@ def init_all_cameras_from_config():
                     cam.MV_CC_DestroyHandle()
                     break
 
-                # Set config
-                if cfg["trigger_mode"].lower() == "off":
+                # ⚙️ Trigger Mode
+                trigger_mode = cfg.get("trigger_mode", "Off").lower()
+                if trigger_mode == "off":
                     cam.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_OFF)
                 else:
                     cam.MV_CC_SetEnumValue("TriggerMode", MV_TRIGGER_MODE_ON)
 
+                    # ⚙️ Trigger Source nếu cần
+                    trigger_source = cfg.get("trigger_source", "software").lower()
+                    if trigger_source == "software":
+                        cam.MV_CC_SetEnumValue("TriggerSource", 7)  # 7 = Software
+                    elif trigger_source == "hardware":
+                        cam.MV_CC_SetEnumValue("TriggerSource", 0)  # 0 = Line0 (tùy hãng)
+
+                # Các thiết lập khác
                 cam.MV_CC_SetEnumValue("PixelFormat", PixelType_Gvsp_RGB8_Packed)
                 cam.MV_CC_SetFloatValue("ExposureTime", cfg["exposure_time"])
                 cam.MV_CC_SetFloatValue("Gain", cfg["gain"])
 
+                # Bắt đầu grabbing
                 if cam.MV_CC_StartGrabbing() != 0:
                     print(f"❌ Không thể bắt đầu grabbing {cfg['name']}")
                     cam.MV_CC_CloseDevice()
@@ -118,7 +130,9 @@ def init_all_cameras_from_config():
                 cams.append({
                     "cam": cam,
                     "model_index": cfg["model_index"],
-                    "name": cfg["name"]
+                    "name": cfg["name"],
+                    "trigger_mode": trigger_mode,
+                    "trigger_source": cfg.get("trigger_source", "software").lower()
                 })
 
                 print(f"✅ Đã kết nối {cfg['name']}")
@@ -162,129 +176,120 @@ async def websocket_image(websocket: WebSocket):
     finally:
         clients.discard(websocket)
         print(f"🟡 Client removed: {client_info} (Remaining: {len(clients)})")
-async def handle_capture_and_send(websocket: WebSocket):
-    with cams_lock:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
 
-        for cam_info in cams:
-            cam = cam_info["cam"]
-            cam_name = cam_info["name"]
-            model_index = cam_info["model_index"]
+
+import threading
+import asyncio
+
+async def handle_capture_and_send(websocket: WebSocket):
+    timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    
+    async def process_camera_thread(cam_info):
+        cam = cam_info["cam"]
+        cam_name = cam_info["name"]
+        model_index = cam_info["model_index"]
+        trigger_mode = cam_info.get("trigger_mode", "off").lower()
+        trigger_source = cam_info.get("trigger_source", "software").lower()
+
+        def camera_task():
+            # 🧵 Thread ID
+            thread_id = threading.get_ident()
+
+            # Trigger software nếu cần
+            if trigger_mode == "on" and trigger_source == "software":
+                trigger_ret = cam.MV_CC_SetCommandValue("TriggerSoftware")
+                if trigger_ret != 0:
+                    print(f"⚠️ {cam_name} - TriggerSoftware thất bại: {trigger_ret}")
+                    return None
+
+                time.sleep(0.02)  # Đợi ảnh được capture
 
             stOutFrame = MV_FRAME_OUT()
             memset(byref(stOutFrame), 0, sizeof(stOutFrame))
 
-            ret = cam.MV_CC_GetImageBuffer(stOutFrame, 1000)
-            if ret == 0 and stOutFrame.pBufAddr:
-                try:
-                    width = stOutFrame.stFrameInfo.nWidth
-                    height = stOutFrame.stFrameInfo.nHeight
-                    buf_len = stOutFrame.stFrameInfo.nFrameLen
+            ret = cam.MV_CC_GetImageBuffer(stOutFrame, 1500)
+            if ret != 0 or not stOutFrame.pBufAddr:
+                print(f"❌ {cam_name} - Không lấy được buffer ảnh (ret={ret})")
+                return None
 
-                    buf_type = (c_ubyte * buf_len)
-                    buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
-                    np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
+            try:
+                width = stOutFrame.stFrameInfo.nWidth
+                height = stOutFrame.stFrameInfo.nHeight
+                buf_len = stOutFrame.stFrameInfo.nFrameLen
 
-                    # ✅ Chạy YOLO
-                    results_yolo = models[model_index](np_img)[0]
+                buf_type = (c_ubyte * buf_len)
+                buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
+                np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
 
-                    # ✅ Vẽ bounding box
-                    for box in results_yolo.boxes:
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cls = int(box.cls[0])
-                        conf = float(box.conf[0])
-                        label = f"{results_yolo.names[cls]} {conf:.2f}"
+                start_time = time.time()
+                results_yolo = models[model_index](np_img)[0]
 
-                        cv2.rectangle(np_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(np_img, label, (x1, y1 - 5),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
+                for box in results_yolo.boxes:
+                    x1, y1, x2, y2 = map(int, box.xyxy[0])
+                    cls = int(box.cls[0])
+                    conf = float(box.conf[0])
+                    label = f"{results_yolo.names[cls]} {conf:.2f}"
 
-                    # ✅ Gửi ảnh đã vẽ
-                    _, buffer = cv2.imencode('.jpg', np_img)
-                    base64_img = base64.b64encode(buffer).decode()
+                    cv2.rectangle(np_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
+                    cv2.putText(np_img, label, (x1, y1 - 5),
+                                cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
 
-                    await websocket.send_json({
-                        "camera": cam_name,
-                        "image": base64_img,
-                        "avg_processing": processing_ms
-                    })
+                # 🏷️ Vẽ thread ID
+                cv2.putText(np_img, f"Thread: {thread_id}", (10, 20),
+                            cv2.FONT_HERSHEY_SIMPLEX, 0.6, (255, 255, 0), 2)
 
-                    print(f"✅ Sent image from {cam_name} to {websocket.client.host}:{websocket.client.port}")
+                processing_time_ms = round((time.time() - start_time) * 1000, 2)
 
-                except Exception as e:
-                    print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
+                _, buffer = cv2.imencode('.jpg', np_img)
+                base64_img = base64.b64encode(buffer).decode()
 
-                finally:
-                    cam.MV_CC_FreeImageBuffer(stOutFrame)
-async def handle_capture_and_send(websocket: WebSocket):
+                return {
+                    "camera": cam_name,
+                    "image": base64_img,
+                    "avg_processing": processing_time_ms,
+                    "thread_id": thread_id
+                }
+
+            except Exception as e:
+                print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
+                return None
+
+            finally:
+                cam.MV_CC_FreeImageBuffer(stOutFrame)
+
+        # Gọi hàm blocking trong thread riêng
+        return await asyncio.to_thread(camera_task)
+
+    # 🧠 Xử lý nhiều camera song song
     with cams_lock:
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        total_time_ms = 0  # ✅ Tổng thời gian xử lý toàn bộ camera
+        tasks = [process_camera_thread(cam_info) for cam_info in cams]
+    results = await asyncio.gather(*tasks)
 
-        for cam_info in cams:
-            cam = cam_info["cam"]
-            cam_name = cam_info["name"]
-            model_index = cam_info["model_index"]
+    total_time = 0
+    for result in results:
+        if result:
+            total_time += result["avg_processing"]
+            try:
+                await websocket.send_json({
+                    "type": "camera_image",
+                    "camera": result["camera"],
+                    "image": result["image"],
+                    "avg_processing": result["avg_processing"]
+                })
+                print(f"📸 {result['camera']} processed by Thread {result['thread_id']} in {result['avg_processing']}ms")
+            except Exception as e:
+                print(f"⚠️ Lỗi gửi ảnh: {e}")
 
-            stOutFrame = MV_FRAME_OUT()
-            memset(byref(stOutFrame), 0, sizeof(stOutFrame))
-
-            ret = cam.MV_CC_GetImageBuffer(stOutFrame, 1000)
-            if ret == 0 and stOutFrame.pBufAddr:
-                try:
-                    width = stOutFrame.stFrameInfo.nWidth
-                    height = stOutFrame.stFrameInfo.nHeight
-                    buf_len = stOutFrame.stFrameInfo.nFrameLen
-
-                    buf_type = (c_ubyte * buf_len)
-                    buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
-                    np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
-                    start_time = time.time()
-                    results_yolo = models[model_index](np_img)[0]
-
-                    # 🖍️ Vẽ bounding box
-                    for box in results_yolo.boxes:
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cls = int(box.cls[0])
-                        conf = float(box.conf[0])
-                        label = f"{results_yolo.names[cls]} {conf:.2f}"
-
-                        cv2.rectangle(np_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(np_img, label, (x1, y1 - 5),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-
-                    processing_time_ms = round((time.time() - start_time) * 1000, 2)
-                    total_time_ms += processing_time_ms
-
-
-                    _, buffer = cv2.imencode('.jpg', np_img)
-                    base64_img = base64.b64encode(buffer).decode()
-
-                    await websocket.send_json({
-                        "type": "camera_image",
-                        "camera": cam_name,
-                        "image": base64_img,
-                        "avg_processing": processing_time_ms
-                    })
-
-                    print(f"✅ Sent image from {cam_name} ({processing_time_ms}ms) to {websocket.client.host}:{websocket.client.port}")
-
-                except Exception as e:
-                    print(f"❌ Lỗi xử lý ảnh {cam_name}: {e}")
-
-                finally:
-                    cam.MV_CC_FreeImageBuffer(stOutFrame)
-
-        try:
-            await websocket.send_json({
-                "type": "processing_summary",
-                "total_processing": round(total_time_ms, 2),
-                "total_cameras": len(cams)
-            })
-            print(f"📊 Tổng thời gian xử lý toàn bộ camera: {round(total_time_ms, 2)}ms")
-        except Exception as e:
-            print(f"⚠️ Lỗi gửi tổng thời gian xử lý tới client: {e}")
+    # Tổng kết
+    try:
+        await websocket.send_json({
+            "type": "processing_summary",
+            "total_processing": round(total_time, 2),
+            "total_cameras": len([r for r in results if r])
+        })
+        print(f"📊 Tổng thời gian xử lý toàn bộ camera: {round(total_time, 2)}ms")
+    except Exception as e:
+        print(f"⚠️ Lỗi gửi tổng thời gian xử lý tới client: {e}")
 
 async def ping_clients_loop():
     while True:
@@ -355,7 +360,19 @@ async def capture_all():
 
                     buf_type = (c_ubyte * buf_len)
                     buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
-                    np_img = np.frombuffer(buf, dtype=np.uint8).reshape((height, width, 3))
+                    np_img_flat = np.frombuffer(buf, dtype=np.uint8)
+
+                    expected_rgb = width * height * 3
+                    expected_gray = width * height
+
+                    if buf_len == expected_rgb:
+                        np_img = np_img_flat.reshape((height, width, 3))
+                    elif buf_len == expected_gray:
+                        gray_img = np_img_flat.reshape((height, width))
+                        np_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
+                    else:
+                        raise ValueError(f"❌ Không xác định được định dạng ảnh từ {cam_name}: buf_len={buf_len}, w={width}, h={height}")
+
                     start_time = time.time()
                     results_yolo = models[model_index](np_img)[0]
                     for box in results_yolo.boxes:

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:predict_ai/Widget/system_status.dart';
 
@@ -13,7 +15,22 @@ class DrawerMenu extends StatefulWidget {
 }
 
 class _DrawerMenuState extends State<DrawerMenu> {
+  int _seconds = 0;
+  Timer? _timer;
   int selectedIndex = 0;
+  bool isTimer = false;
+
+  void startTimer() {
+    _timer?.cancel(); // Hủy nếu có timer cũ
+    _timer = Timer.periodic(const Duration(seconds: 5), (timer) {
+      WebSocketManager().send("capture");
+    });
+  }
+
+  void stopTimer() {
+    _timer?.cancel();
+  }
+
   @override
   Widget build(BuildContext context) {
     return Column(
@@ -236,7 +253,13 @@ class _DrawerMenuState extends State<DrawerMenu> {
                         foregroundColor: Colors.red,
                       ),
                       onPressed: () {
-                        WebSocketManager().send("capture");
+                        isTimer = !isTimer;
+                        print(isTimer);
+                        if (isTimer) {
+                          startTimer();
+                        } else {
+                          stopTimer();
+                        }
                       },
                       child: Icon(Icons.camera_alt),
                     ),

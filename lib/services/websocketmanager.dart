@@ -36,7 +36,7 @@ class WebSocketManager {
 
   void _connect() {
     _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.11:8000/ws/image'),
+      Uri.parse('ws://192.168.1.5:8000/ws/image'),
     );
 
     _channel.stream.listen(
