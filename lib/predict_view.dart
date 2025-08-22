@@ -20,8 +20,6 @@ class _PredictViewState extends State<PredictView> {
     print("✅ PredictView initialized");
   }
 
-
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -44,18 +42,36 @@ class _PredictViewState extends State<PredictView> {
 
                   final cameraNames = cameraImages.keys.toList();
 
-                  return GridView.count(
-                    crossAxisCount: 3,
-                    crossAxisSpacing: 8,
-                    mainAxisSpacing: 8,
-                    padding: const EdgeInsets.all(12),
-                    children:
-                        cameraNames.map((cameraName) {
-                          return CameraImageWidget(
-                            cameraId: cameraName,
-                            base64Image: cameraImages[cameraName],
-                          );
-                        }).toList(),
+                  return LayoutBuilder(
+                    builder: (context, constraints) {
+                      int cameraCount = cameraNames.length;
+                      int crossAxisCount;
+
+                      if (cameraCount == 1) {
+                        crossAxisCount = 1;
+                      } else if (cameraCount == 2) {
+                        crossAxisCount = 2;
+                      } else {
+                        crossAxisCount = 3;
+                      }
+
+                      return GridView.count(
+                        crossAxisCount: crossAxisCount,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                        padding: const EdgeInsets.all(12),
+                        children:
+                            cameraNames.map((cameraName) {
+                              return AspectRatio(
+                                aspectRatio: 4 / 3, 
+                                child: CameraImageWidget(
+                                  cameraId: cameraName,
+                                  base64Image: cameraImages[cameraName],
+                                ),
+                              );
+                            }).toList(),
+                      );
+                    },
                   );
                 },
               ),

@@ -1,66 +1,16 @@
 {
-    "issave": false,
+    "issave": true,
     "save_path": "F:/predict_flutter/GrabImage",
     "cameras": [
         {
-            "name": "Cam 2",
+            "name": "Cam 1",
             "serial": "DA5723583",
-            "ip": "192.168.1.33",
+            "ip": "192.168.1.99",
             "model_index": 0,
-            "trigger_mode": "On",
-            "trigger_source": "software",
-            "exposure_time": 5000,
-            "gain": 10.0
-        },
-        {
-            "name": "Cam 3",
-            "serial": "K92528957",
-            "ip": "192.168.1.56",
-            "model_index": 1,
-            "trigger_mode": "On",
-            "trigger_source": "software",
-            "exposure_time": 5000,
-            "gain": 10.0
-        },
-        {
-            "name": "Cam 4",
-            "serial": "Vir77111453",
-            "ip": "10.64.160.157",
-            "model_index": 2,
-            "trigger_mode": "On",
-            "trigger_source": "software",
-            "exposure_time": 5000,
-            "gain": 10.0
-        },
-        {
-            "name": "Cam 5",
-            "serial": "Vir77111508",
-            "ip": "10.64.160.212",
-            "model_index": 3,
-            "trigger_mode": "On",
-            "trigger_source": "software",
-            "exposure_time": 5000,
-            "gain": 10.0
-        },
-        {
-            "name": "Cam 6",
-            "serial": "Vir77111556",
-            "ip": "10.64.161.4",
-            "model_index": 4,
-            "trigger_mode": "On",
-            "trigger_source": "software",
-            "exposure_time": 5000,
-            "gain": 10.0
-        },
-        {
-            "name": "Cam 7",
-            "serial": "Vir77111601",
-            "ip": "10.64.161.49",
-            "model_index": 5,
-            "trigger_mode": "On",
-            "trigger_source": "software",
+            "trigger_mode": "Off",
             "exposure_time": 5000,
             "gain": 10.0
         }
+     
     ]
 }

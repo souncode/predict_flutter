@@ -1,6 +1,8 @@
 import 'dart:convert';
+import 'dart:html';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
+import 'package:http/http.dart' as http;
 import 'package:predict_ai/Widget/system_status.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
@@ -22,23 +24,18 @@ class WebSocketManager {
   final ValueNotifier<bool> isConnectedNotifier = ValueNotifier(false);
   List<dynamic> cameraConfigs = [];
 
-  void loadCameraConfig() async {
-    final configJson = await rootBundle.loadString(
-      'GrabImage/CameraConfig.json',
-    );
-    final config = jsonDecode(configJson);
-    cameraConfigs = config['cameras'];
-  }
-
   WebSocketManager._internal() {
     _connect();
   }
 
-  void _connect() {
-    _channel = WebSocketChannel.connect(
-      Uri.parse('ws://192.168.1.5:8000/ws/image'),
+  Future<void> _connect() async {
+    final response = await HttpRequest.getString(
+      'ws_config.json?v=${DateTime.now().millisecondsSinceEpoch}',
     );
-
+    print("📥 Raw config: $response"); 
+    final config = jsonDecode(response);
+    final wsUrl = config['ws_url'];
+    _channel = WebSocketChannel.connect(Uri.parse(wsUrl));
     _channel.stream.listen(
       (data) {
         isConnectedNotifier.value = true;
@@ -51,7 +48,6 @@ class WebSocketManager {
             print("📊 Updated total processing: ${totalProcessing.value} ms");
           }
 
-          // 🖼️ Cập nhật ảnh nếu có
           if (decoded.containsKey('camera') && decoded.containsKey('image')) {
             final String camera = decoded['camera'];
             final String image = decoded['image'];

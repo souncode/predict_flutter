@@ -3,6 +3,7 @@
 import sys
 import copy
 import ctypes
+import platform
 
 from ctypes import *
 
@@ -12,12 +13,17 @@ from CameraParams_header import *
 from MvErrorDefine_const import *
 
 # Python3.8版本修改Dll加载策略, 默认不再搜索Path环境变量, 同时增加winmode参数以兼容旧版本
-dllname = "MvCameraControl.dll"
-if "winmode" in ctypes.WinDLL.__init__.__code__.co_varnames:
-    MvCamCtrldll = WinDLL(dllname, winmode=0)
+if platform.system() == "Windows":
+    dllname = "MvCameraControl.dll"
+    if "winmode" in ctypes.WinDLL.__init__.__code__.co_varnames:
+        MvCamCtrldll = ctypes.WinDLL(dllname, winmode=0)
+    else:
+        MvCamCtrldll = ctypes.WinDLL(dllname)
 else:
-    MvCamCtrldll = WinDLL(dllname)
-
+    # Trên Linux, dùng file .so (nằm trong /opt/MVS/lib/ hoặc /opt/MVS/bin)
+    dllname = "/opt/MVS/lib/aarch64/libMvCameraControl.so"
+    MvCamCtrldll = ctypes.CDLL(dllname)
+# sudo find /opt/MVS/ -name "libMvCameraControl.so"
 
 # 用于回调函数传入相机实例
 class _MV_PY_OBJECT_(Structure):

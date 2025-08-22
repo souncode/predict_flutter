@@ -17,10 +17,15 @@ class CameraImageWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     Uint8List? bytes;
     if (base64Image != null) {
-      try {
-        bytes = base64Decode(base64Image!);
-      } catch (_) {}
-    }
+  try {
+    // Bỏ prefix nếu có
+    final cleaned = base64Image!.split(',').last;
+    bytes = base64Decode(cleaned);
+  } catch (e) {
+    print("⚠️ Decode error: $e");
+  }
+}
+
 
     return Card(
       color: MyColor.appBarColor,
