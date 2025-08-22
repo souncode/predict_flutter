@@ -8,7 +8,6 @@ import numpy as np
 import cv2
 import os
 import json
-import asyncio
 from threading import Lock
 import base64
 from ultralytics import YOLO
@@ -17,15 +16,13 @@ import time
 import psutil
 import logging
 import platform
-import ctypes
-from ctypes import cdll, c_ubyte, byref
 from MvCameraControl_class import *
-import threading
-import asyncio
+from fastapi import WebSocket, WebSocketDisconnect
+from ctypes import byref, c_ubyte
+from MvCameraControl_class import *
+
 
 app = FastAPI()
-
-
 PixelType_Gvsp_Mono8        = 0x01080001
 PixelType_Gvsp_BayerRG8     = 0x01080009
 PixelType_Gvsp_RGB8_Packed  = 0x02180014
@@ -76,19 +73,13 @@ def load_camera_config():
         camera_configs = data["cameras"]
         issaveimage = data.get("issave", False)
         save_path = data.get("save_path", "images")
-        
-
 
 def decode_model_name(model_bytes):
     return bytes(model_bytes).split(b'\x00')[0].decode(errors='ignore').strip()
 
-
-
 def load_config(path="CameraConfig.json"):
     with open(path, "r", encoding="utf-8") as f:
         return json.load(f)
-
-
 
 def find_device_by_serial_or_ip(dev_list, target_serial=None, target_ip=None):
     for i in range(dev_list.nDeviceNum):
@@ -172,9 +163,7 @@ def save_bgr(bgr, save_path, prefix, issave=True):
     return filepath
 
 def capture_image(cam_info, issave=True, save_path=CAPTURE_DIR):
-    """
-    Chụp ảnh từ MvCamera bằng TriggerSoftware + GetOneFrameTimeout
-    """
+
     try:
         cam = cam_info["cam"]
         name = cam_info["name"]
@@ -204,7 +193,7 @@ def capture_image(cam_info, issave=True, save_path=CAPTURE_DIR):
         # Encode base64 để trả về WS
         _, buffer = cv2.imencode(".jpg", bgr)
         b64 = base64.b64encode(buffer).decode("utf-8")
-        return b64
+        return f"data:image/jpeg;base64,{b64}"
 
     except Exception as e:
         print(f"⚠️ Lỗi capture {cam_info['name']}: {e}")
@@ -226,76 +215,45 @@ def decode_frame(buf, frame_info, payload):
         bayer = np_flat.reshape((h, w))
         return cv2.cvtColor(bayer, cv2.COLOR_BAYER_RG2BGR)
 
-@app.on_event("startup")
-def startup_event():
+async def handle_capture_and_send(websocket: WebSocket):
+    """Chụp ảnh từ tất cả camera và gửi về WebSocket client."""
+    processing_times = []
+
     with cams_lock:
-        init_all_cameras_from_config()
-      
-    asyncio.create_task(ping_clients_loop())
-    asyncio.create_task(send_system_status())
-       
+        if not cams:
+            await websocket.send_json({
+                "type": "error",
+                "message": "No camera"
+            })
+            return
 
-from fastapi import WebSocket, WebSocketDisconnect
+        for cam_info in cams:
+            cam_name = cam_info["name"]
 
-import json
+            try:
+                start_time = time.time()
+                image_data = capture_image(cam_info)
+                processing_time_ms = (time.time() - start_time) * 1000
+                processing_times.append(processing_time_ms)
+            except Exception as e:
+                print(f"⚠️ Lỗi capture {cam_name}: {e}")
+                continue
 
-@app.websocket("/ws/image")
-async def websocket_endpoint(websocket: WebSocket):
-    await websocket.accept()
-    clients.add(websocket)
-    try:
-        while True:
-            data = await websocket.receive_text()
-            if data == 'capture':
-                with cams_lock:
-                    if not cams:
-                        await websocket.send_text(json.dumps({
-                            "type": "error",
-                            "message": "No camera"
-                        }))
-                        continue
+            if image_data:
+                await websocket.send_json({
+                    "type": "camera_image",
+                    "camera": cam_name,
+                    "image": image_data, 
+                    "avg_processing": processing_time_ms
+                })
 
-                for cam_info in cams:
-                    start_time = time.time()
-                    b64 = capture_image(cam_info)
-                    processing_time_ms = (time.time() - start_time) * 1000
-
-                    if b64:
-                        msg = {
-                            "type": "camera_image",
-                            "camera": cam_info["name"],
-                            "image": str(b64),   # ép chắc chắn là string
-                            "avg_processing": float(processing_time_ms)
-                        }
-                        # 🔑 dùng send_text + json.dumps thay vì send_json
-                        await websocket.send_text(json.dumps(msg))
-
-            else:
-                await websocket.send_text(json.dumps({
-                    "type": "info",
-                    "message": f"Server nhận: {data}"
-                }))
-
-    except WebSocketDisconnect:
-        clients.discard(websocket)
-    except Exception as e:
-        clients.discard(websocket)
-        print(f"⚠️ WS error: {e}")
-
-
-async def run_in_thread(func, *args):
-    loop = asyncio.get_running_loop()
-    return await loop.run_in_executor(None, func, *args)
-import ctypes
-import cv2
-import numpy as np
-import base64
-from ctypes import byref, c_ubyte
-
-
-from MvCameraControl_class import *
-
-
+    # Gửi summary sau cùng
+    avg_time = sum(processing_times) / len(processing_times) if processing_times else 0.0
+    await websocket.send_json({
+        "type": "processing_summary",
+        "total_processing": avg_time,
+        "total_cameras": len(cams)
+    })
 
 async def ping_clients_loop():
     while True:
@@ -306,6 +264,43 @@ async def ping_clients_loop():
             except Exception as e:
                 print(f"⚠️ Client do not response ping → Delete: {e}")
                 clients.discard(ws)
+
+async def run_in_thread(func, *args):
+    loop = asyncio.get_running_loop()
+    return await loop.run_in_executor(None, func, *args)
+
+@app.on_event("startup")
+def startup_event():
+    with cams_lock:
+        init_all_cameras_from_config()
+      
+    asyncio.create_task(ping_clients_loop())
+    asyncio.create_task(send_system_status())
+       
+@app.websocket("/ws/image")
+async def websocket_endpoint(websocket: WebSocket):
+    await websocket.accept()
+    clients.add(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+
+            if data == "capture":
+                await handle_capture_and_send(websocket)
+            else:
+                await websocket.send_json({
+                    "type": "info",
+                    "message": f"Server nhận: {data}"
+                })
+
+    except WebSocketDisconnect:
+        clients.discard(websocket)
+    except Exception as e:
+        clients.discard(websocket)
+        print(f"⚠️ WS error: {e}")
+
+
+
 
 @app.get("/scancamera")
 def scan_camera():
@@ -333,125 +328,25 @@ def scan_camera():
             "output": str(e)
         })
 
-
 @app.get("/capture")
 async def capture_all():
-    try:
-        with cams_lock:
-            if not cams:
-                return JSONResponse(status_code=500, content={"error": "No active camera found"})
+    if not clients:
+        return {"status": "no clients connected"}
 
-            results = []
-            total_time_ms = 0  
-            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+    # Gửi ảnh cho tất cả WebSocket client
+    for ws in list(clients):
+        try:
+            await handle_capture_and_send(ws)
+        except Exception as e:
+            print(f"⚠️ Lỗi gửi WS: {e}")
+            clients.discard(ws)
 
-            for cam_info in cams:
-                cam = cam_info["cam"]
-                model_index = 1
-                cam_name = cam_info["name"]
-
-                stOutFrame = MV_FRAME_OUT()
-                memset(byref(stOutFrame), 0, sizeof(stOutFrame))
-
-                ret = cam.MV_CC_GetImageBuffer(stOutFrame, 500)
-                if ret != 0 or not stOutFrame.pBufAddr:
-                    print(f"❌ Không lấy được ảnh từ {cam_name}")
-                    results.append(None)
-                    continue
-
-                try:
-                    width = stOutFrame.stFrameInfo.nWidth
-                    height = stOutFrame.stFrameInfo.nHeight
-                    buf_len = stOutFrame.stFrameInfo.nFrameLen
-
-                    buf_type = (c_ubyte * buf_len)
-                    buf = buf_type.from_address(addressof(stOutFrame.pBufAddr.contents))
-                    np_img_flat = np.frombuffer(buf, dtype=np.uint8)
-
-                    expected_rgb = width * height * 3
-                    expected_gray = width * height
-
-                    if buf_len == expected_rgb:
-                        np_img = np_img_flat.reshape((height, width, 3))
-                    elif buf_len == expected_gray:
-                        gray_img = np_img_flat.reshape((height, width))
-                        np_img = cv2.cvtColor(gray_img, cv2.COLOR_GRAY2BGR)
-                    else:
-                        raise ValueError(f"❌ Không xác định được định dạng ảnh từ {cam_name}: buf_len={buf_len}, w={width}, h={height}")
-
-                    start_time = time.time()
-                    results_yolo = models[model_index](np_img)[0]
-                    for box in results_yolo.boxes:
-                        x1, y1, x2, y2 = map(int, box.xyxy[0])
-                        cls = int(box.cls[0])
-                        conf = float(box.conf[0])
-                        label = f"{results_yolo.names[cls]} {conf:.2f}"
-
-                        cv2.rectangle(np_img, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.putText(np_img, label, (x1, y1 - 5),
-                                    cv2.FONT_HERSHEY_SIMPLEX, 0.6, (0, 255, 0), 2)
-
-                    processing_time_ms = round((time.time() - start_time) * 1000, 2)
-                    total_time_ms += processing_time_ms
-
-                    _, buffer = cv2.imencode('.jpg', np_img)
-                    base64_img = base64.b64encode(buffer).decode()
-
-                    data = {
-                        "type": "camera_image",
-                        "camera": cam_name,
-                        "image": base64_img,
-                        "avg_processing": processing_time_ms
-                    }
-
-                    for ws in list(clients):
-                        try:
-                            await asyncio.wait_for(ws.send_json(data), timeout=1.0)
-                            print(f"📤 Sent from {cam_name} ({processing_time_ms}ms) to {getattr(ws.client, 'host', 'unknown')}:{getattr(ws.client, 'port', 'unknown')}")
-                        except Exception as e:
-                            print(f"⚠️ Sent to WebSocket client fail: {e}")
-                            clients.discard(ws)
-
-                    # 💾 Lưu ảnh nếu bật
-                    if issaveimage:
-                        os.makedirs(save_path, exist_ok=True)
-                        filename = os.path.join(save_path, f"{cam_name}_{timestamp}.jpg")
-                        cv2.imwrite(filename, np_img)
-                        print(f"✅ Image from {cam_name} saved - {filename}")
-                    else:
-                        filename = None
-
-                    results.append(filename)
-
-                except Exception as e:
-                    print(f"❌ Error when predict {cam_name}: {e}")
-                    results.append(None)
-
-                finally:
-                    cam.MV_CC_FreeImageBuffer(stOutFrame)
-
-         
-            for ws in list(clients):
-                try:
-                    await asyncio.wait_for(ws.send_json({
-                    "type": "processing_summary",
-                    "total_processing": round(total_time_ms, 2),
-                    "total_cameras": len(cams)   
-                }), timeout=1.0)
-                    print(f" total_processing camera: {round(total_time_ms, 2)}ms")
-                except Exception as e:
-                    print(f"⚠️ Error when sent processing time: {e}")
-                    clients.discard(ws)
-
-            return JSONResponse(content={"images": results})
-
-    except Exception as e:
-        print(f"🔥 Lỗi trong /capture: {e}")
-        return JSONResponse(status_code=500, content={"error": str(e)})
+    return {"status": "ok", "message": "Images sent to WS clients"}
 
 
 if __name__ == "__main__":
     import uvicorn
+
     uvicorn.run(
         "ws_server:app",
         host="0.0.0.0",

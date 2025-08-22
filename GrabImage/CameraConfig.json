@@ -1,16 +1,24 @@
 {
-    "issave": true,
+    "issave": false,
     "save_path": "F:/predict_flutter/GrabImage",
     "cameras": [
         {
             "name": "Cam 1",
-            "serial": "DA5723583",
-            "ip": "192.168.1.99",
+            "serial": "K92528957",
+            "ip": "192.168.1.56",
             "model_index": 0,
             "trigger_mode": "Off",
             "exposure_time": 5000,
             "gain": 10.0
+        },
+        {
+            "name": "Cam 2",
+            "serial": "DA5723583",
+            "ip": "192.168.1.99",
+            "model_index": 1,
+            "trigger_mode": "Off",
+            "exposure_time": 5000,
+            "gain": 10.0
         }
-     
     ]
 }
